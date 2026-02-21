@@ -46,3 +46,25 @@ Since our project uses multiple sensors (DHT11, Soil, NPK, pH, Fire, Relay, LED 
         Single Channel Relay	Controls water motor
         Water Motor	Irrigation system
         LED Display (16x2 / 20x4)	Displays sensor readings
+
+⚙️ System Working
+
+    Sensors send data to Arduino Mega.
+
+    Arduino processes all sensor readings.
+
+    Values are displayed on LED display.
+
+    If soil moisture < threshold:
+
+    Relay turns ON
+
+    Water motor starts
+
+    If moisture is sufficient:
+
+    Motor turns OFF
+
+    If fire detected:
+
+    Alert triggered
