@@ -183,7 +183,7 @@
 
   .grid-mid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
     gap: 18px;
     margin-bottom: 18px;
   }
@@ -238,7 +238,7 @@
   .prog-track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
   .prog-fill { height: 100%; border-radius: 3px; transition: width 1.2s cubic-bezier(0.4,0,0.2,1), background 0.5s; }
 
-  /* ── pH GAUGE (same as original) ── */
+  /* ── pH GAUGE ── */
   .gauge-wrap {
     display: flex; flex-direction: column; align-items: center;
     padding: 10px 0 0;
@@ -265,86 +265,6 @@
     transform: translateX(-50%); transition: left 1s cubic-bezier(0.4,0,0.2,1);
   }
 
-  /* ── MOTOR PANEL ── */
-  .motor-center {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; height: 100%; gap: 10px; padding: 8px 0;
-  }
-
-  .motor-ring-wrap {
-    width: 100px; height: 100px; border-radius: 50%;
-    border: 3px solid var(--border); display: flex;
-    align-items: center; justify-content: center; position: relative;
-    transition: all 0.5s; background: var(--bg);
-  }
-  .motor-ring-wrap.on {
-    border-color: var(--accent2);
-    box-shadow: 0 0 0 6px rgba(0,168,107,0.1);
-    background: #f0faf5;
-  }
-
-  .motor-spinner {
-    position: absolute; inset: 6px; border-radius: 50%;
-    border: 2.5px solid transparent; border-top-color: var(--accent2);
-    opacity: 0; transition: opacity 0.4s;
-  }
-  .motor-ring-wrap.on .motor-spinner { opacity: 1; animation: spin 0.9s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .motor-emoji { font-size: 2rem; z-index: 1; }
-
-  .motor-state-label {
-    font-family: 'Orbitron', sans-serif; font-size: 1.1rem;
-    font-weight: 900; letter-spacing: 0.15em;
-    transition: color 0.4s;
-  }
-  .motor-state-label.on { color: var(--accent2); }
-  .motor-state-label.off { color: var(--dim); }
-
-  .motor-hint { font-size: 0.68rem; color: var(--dim); letter-spacing: 0.06em; }
-
-  /* Toggle */
-  .toggle-row { display: flex; align-items: center; gap: 12px; }
-  .tog-lab { font-size: 0.7rem; color: var(--dim); letter-spacing: 0.1em; }
-
-  .toggle-sw {
-    position: relative; width: 56px; height: 28px;
-    cursor: pointer; -webkit-tap-highlight-color: transparent;
-  }
-  .ts-track {
-    position: absolute; inset: 0; border-radius: 14px;
-    background: #e5e7eb; border: 1.5px solid #d1d5db;
-    transition: all 0.35s;
-  }
-  .toggle-sw.on .ts-track { background: var(--accent2); border-color: var(--accent2); }
-
-  .ts-thumb {
-    position: absolute; top: 3px; left: 3px;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-    transition: left 0.35s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .toggle-sw.on .ts-thumb { left: 31px; }
-
-  .motor-cta {
-    font-family: 'Orbitron', sans-serif; font-weight: 700;
-    font-size: 0.75rem; letter-spacing: 0.15em; padding: 10px 28px;
-    border-radius: 6px; cursor: pointer; transition: all 0.25s;
-    text-transform: uppercase; border: 2px solid var(--accent2);
-    background: var(--accent2); color: #fff;
-    box-shadow: 0 3px 10px rgba(0,168,107,0.25);
-  }
-  .motor-cta:hover { background: #008f5a; border-color: #008f5a; transform: translateY(-1px); }
-  .motor-cta.stop { background: #fff; color: var(--danger); border-color: var(--danger); box-shadow: none; }
-  .motor-cta.stop:hover { background: var(--danger); color: #fff; box-shadow: 0 3px 10px rgba(229,57,53,0.2); }
-
-  .auto-note {
-    font-size: 0.65rem; color: var(--dim); letter-spacing: 0.05em;
-    text-align: center; line-height: 1.7; padding: 10px;
-    background: var(--bg); border-radius: 6px; border: 1px solid var(--border);
-    width: 100%;
-  }
-
   /* ── METRICS ── */
   .metric-val {
     font-family: 'Orbitron', sans-serif; font-size: 1.6rem;
@@ -364,7 +284,7 @@
   .log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .log-entry {
-    display: grid; grid-template-columns: 72px 60px 60px 1fr 70px;
+    display: grid; grid-template-columns: 72px 60px 60px 1fr;
     gap: 8px; padding: 7px 4px; font-size: 0.7rem; letter-spacing: 0.04em;
     border-bottom: 1px solid var(--bg); align-items: center;
     transition: background 0.15s;
@@ -374,8 +294,6 @@
   .log-ok { color: var(--good); font-weight: 700; }
   .log-warn { color: var(--warn); font-weight: 700; }
   .log-bad { color: var(--bad); font-weight: 700; }
-  .log-pump-on { color: var(--accent2); font-weight: 700; }
-  .log-pump-off { color: var(--dim); }
 
   .empty-msg { color: var(--dim); font-size: 0.75rem; padding: 20px 4px; letter-spacing: 0.06em; }
 
@@ -421,7 +339,7 @@
 
   @media (max-width: 1100px) {
     .grid-top { grid-template-columns: 1fr 1fr; }
-    .grid-mid, .grid-bottom { grid-template-columns: 1fr; }
+    .grid-bottom { grid-template-columns: 1fr; }
   }
   @media (max-width: 640px) {
     main { padding: 20px 16px; }
@@ -489,7 +407,7 @@ Humidity: 72 %
       <span class="alert-icon">🚨</span>
       <div class="alert-text">
         <strong>CRITICAL — SOIL TOO DRY</strong>
-        <span id="alertMsg">Moisture critical. Pump auto-activated.</span>
+        <span id="alertMsg">Moisture critical. Immediate attention required.</span>
       </div>
       <button class="alert-close" onclick="this.parentElement.classList.remove('show')">✕</button>
     </div>
@@ -563,10 +481,9 @@ Humidity: 72 %
       </div>
     </div>
 
-    <!-- ── MID ROW: pH Gauge + Motor ── -->
+    <!-- ── MID ROW: pH Gauge + Metrics (full width) ── -->
     <div class="grid-mid">
 
-      <!-- pH Gauge + Scale + Metrics -->
       <div class="panel" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: start;">
 
         <!-- Gauge -->
@@ -616,41 +533,15 @@ Humidity: 72 %
           <div class="metric-val" id="soilRawDisplay" style="color:var(--accent2)">----</div>
           <div class="metric-sub">ADC (0 – 1023)</div>
           <hr class="metric-div">
-          <div class="panel-label">PUMP RUNTIME</div>
-          <div class="metric-val" id="pumpRuntime" style="color:var(--accent)">0s</div>
-          <div class="metric-sub">TOTAL ON-TIME</div>
+          <div class="panel-label">SOIL STATUS</div>
+          <div class="metric-val" id="soilStatusDisplay" style="color:var(--accent2)">--</div>
+          <div class="metric-sub">CURRENT CONDITION</div>
           <hr class="metric-div">
-          <div class="panel-label">AUTO EVENTS</div>
-          <div class="metric-val" id="autoEvents" style="color:var(--warn)">0</div>
-          <div class="metric-sub">AUTO-ACTIVATIONS</div>
+          <div class="panel-label">pH ALERTS</div>
+          <div class="metric-val" id="phAlerts" style="color:var(--warn)">0</div>
+          <div class="metric-sub">OUT-OF-RANGE EVENTS</div>
         </div>
 
-      </div>
-
-      <!-- Motor Control -->
-      <div class="panel">
-        <div class="panel-label">PUMP / RELAY CONTROL</div>
-        <div class="motor-center">
-          <div class="motor-ring-wrap" id="motorRing">
-            <div class="motor-spinner"></div>
-            <span class="motor-emoji">💧</span>
-          </div>
-          <div class="motor-state-label off" id="motorStateLabel">IDLE</div>
-          <div class="motor-hint" id="motorHint">Toggle to activate pump</div>
-          <div class="toggle-row">
-            <span class="tog-lab">OFF</span>
-            <div class="toggle-sw" id="motorToggle" onclick="toggleMotor()">
-              <div class="ts-track"></div>
-              <div class="ts-thumb"></div>
-            </div>
-            <span class="tog-lab">ON</span>
-          </div>
-          <button class="motor-cta" id="motorBtn" onclick="toggleMotor()">START PUMP</button>
-          <div class="auto-note">
-            Auto-ON when soil ≤ 5%<br>
-            Warning triggered at &lt; 30%
-          </div>
-        </div>
       </div>
     </div>
 
@@ -708,8 +599,8 @@ Humidity: 72 %
       <!-- Reading Log -->
       <div class="panel">
         <div class="panel-label">READING LOG</div>
-        <div style="display:grid;grid-template-columns:60px 44px 40px 40px 44px;gap:4px;font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:8px;padding:0 4px;">
-          <span>TIME</span><span>SOIL</span><span>pH</span><span>TEMP</span><span>PUMP</span>
+        <div style="display:grid;grid-template-columns:60px 44px 40px 40px;gap:4px;font-size:0.6rem;color:var(--dim);letter-spacing:0.08em;margin-bottom:8px;padding:0 4px;">
+          <span>TIME</span><span>SOIL</span><span>pH</span><span>TEMP</span>
         </div>
         <div class="log-panel" id="logPanel">
           <div class="empty-msg">Awaiting data...</div>
@@ -727,10 +618,9 @@ Humidity: 72 %
 <script>
 // ══ STATE ══
 let port, reader, readBuffer = '';
+
 let demoInterval = null;
-let totalReadings = 0, autoEvents = 0;
-let pumpRuntimeSec = 0, pumpTimer = null;
-let motorOn = false, autoTriggered = false;
+let totalReadings = 0, phAlertCount = 0;
 let lastSoilWarn = 0, lastPHWarn = 0, notifId = 0;
 let history = { soil:[], temp:[], hum:[], pH:[] };
 
@@ -771,12 +661,6 @@ async function readLoop() {
 }
 
 // ══ PARSE LINE ══
-// Expects output from your Arduino code:
-//   pH: 7.20 (Neutral)
-//   Soil: 65% (Moist)
-//   Temp: 28 C
-//   Humidity: 72 %
-//   --------------------------
 let pending = {};
 function parseLine(raw) {
   const line = raw.trim();
@@ -799,12 +683,10 @@ function parseLine(raw) {
     pending.hum = parseFloat(m[1]);
   }
   else if (line.includes('---') || line.includes('Analog:')) {
-    // Also handle old pH-only format
     if (line.startsWith('Analog:')) {
       const am = line.match(/Analog:\s*(\d+).*Voltage:\s*([\d.]+)V.*pH:\s*([\d.]+)/);
       if (am) { pending.analog = parseInt(am[1]); pending.voltage = parseFloat(am[2]); pending.ph = parseFloat(am[3]); }
     }
-    // Flush if we have enough
     if (pending.ph !== undefined) {
       updateDash(pending);
       pending = {};
@@ -824,7 +706,7 @@ $('demoBtn').addEventListener('click', () => {
     t += 0.15;
     const ph = parseFloat((6.8 + Math.sin(t) * 1.6 + (Math.random()-0.5)*0.25).toFixed(2));
     const soil = Math.max(0, Math.min(100,
-      65 + Math.sin(t * 0.4) * 30 + (Math.random()-0.5)*4 + (motorOn ? 2 : -1)
+      65 + Math.sin(t * 0.4) * 30 + (Math.random()-0.5)*4
     ));
     const temp = parseFloat((27 + Math.sin(t*0.3)*4 + (Math.random()-0.5)).toFixed(1));
     const hum  = parseFloat((70 + Math.sin(t*0.2)*15 + (Math.random()-0.5)*2).toFixed(1));
@@ -840,16 +722,14 @@ $('demoBtn').addEventListener('click', () => {
 // ══ DISCONNECT ══
 $('disconnectBtn').addEventListener('click', async () => {
   if (demoInterval)  { clearInterval(demoInterval); demoInterval = null; }
-  if (pumpTimer)     { clearInterval(pumpTimer); pumpTimer = null; }
   if (reader)        { await reader.cancel(); }
   if (port)          { await port.close().catch(()=>{}); }
-  motorOn = false; autoTriggered = false;
   $('connDot').className = 'dot';
   $('connLabel').textContent = 'DISCONNECTED';
   $('dashboard').classList.remove('visible');
   $('connectSection').style.display = '';
   history = { soil:[], temp:[], hum:[], pH:[] };
-  totalReadings = 0; autoEvents = 0; pumpRuntimeSec = 0;
+  totalReadings = 0; phAlertCount = 0;
 });
 
 function setConnected(label) {
@@ -859,7 +739,7 @@ function setConnected(label) {
   $('dashboard').classList.add('visible');
 }
 
-// ══ pH COLOR ══
+// ══ pH Color ══
 function phColor(ph) {
   if (ph < 5.5) return '#e53935';
   if (ph < 6.0) return '#f57c00';
@@ -938,7 +818,9 @@ function updateDash({ ph, phCond, soil, soilCond, temp, hum, voltage, analog, so
   if (analog !== undefined)  $('analogDisplay').textContent  = analog;
   if (soilRaw !== undefined) $('soilRawDisplay').textContent = soilRaw;
   $('readingCount').textContent = totalReadings;
-  $('autoEvents').textContent   = autoEvents;
+  $('phAlerts').textContent = phAlertCount;
+  $('soilStatusDisplay').textContent = getSoilCond(soilPct);
+  $('soilStatusDisplay').style.color = soilCol;
 
   // ── STATUS BANNER ──
   const banner = $('statusBanner');
@@ -949,15 +831,11 @@ function updateDash({ ph, phCond, soil, soilCond, temp, hum, voltage, analog, so
   stText.style.color = isGood ? 'var(--good)' : 'var(--bad)';
   $('lastRead').textContent = 'Last reading: ' + now.toLocaleTimeString();
 
-  // ── AUTO PUMP ──
+  // ── ALERT BANNER (dry soil, no pump reference) ──
   const alertBanner = $('alertBanner');
-  if (soilPct <= 5 && !motorOn) {
-    motorOn = true; autoTriggered = true; autoEvents++;
-    updateMotorUI();
-    $('alertMsg').textContent = `Moisture at ${soilPct}% — pump auto-activated.`;
+  if (soilPct <= 5) {
+    $('alertMsg').textContent = `Moisture at ${soilPct}% — immediate attention required.`;
     alertBanner.classList.add('show');
-    $('autoEvents').textContent = autoEvents;
-    notify('danger', 'DRY SOIL ALERT', `Critical: soil at ${soilPct}%. Auto-watering started.`);
   } else if (soilPct > 30 && alertBanner.classList.contains('show')) {
     alertBanner.classList.remove('show');
   }
@@ -970,6 +848,8 @@ function updateDash({ ph, phCond, soil, soilCond, temp, hum, voltage, analog, so
   }
   if ((ph < 5.5 || ph > 8) && nowMs - lastPHWarn > 20000) {
     lastPHWarn = nowMs;
+    phAlertCount++;
+    $('phAlerts').textContent = phAlertCount;
     notify('warn', 'pH OUT OF RANGE', `pH reading ${ph.toFixed(1)} — check nutrients.`);
   }
 
@@ -982,7 +862,7 @@ function updateDash({ ph, phCond, soil, soilCond, temp, hum, voltage, analog, so
   drawChart();
 
   // ── LOG ──
-  addLog(now, soilPct, ph, temp, hum, motorOn);
+  addLog(now, soilPct, ph, temp);
 }
 
 function buildStatusMsg(soil, ph, temp) {
@@ -1027,7 +907,7 @@ function drawChart() {
 }
 
 // ══ LOG ══
-function addLog(time, soil, ph, temp, hum, pump) {
+function addLog(time, soil, ph, temp) {
   const log = $('logPanel');
   if (log.querySelector('.empty-msg')) log.innerHTML = '';
   const row = document.createElement('div');
@@ -1039,53 +919,9 @@ function addLog(time, soil, ph, temp, hum, pump) {
     <span class="${soilCls}">${soil}%</span>
     <span class="${phCls}">${ph.toFixed(1)}</span>
     <span>${temp !== undefined ? Math.round(temp) + '°' : '--'}</span>
-    <span class="${pump ? 'log-pump-on' : 'log-pump-off'}">${pump ? 'ON' : 'OFF'}</span>
   `;
   log.insertBefore(row, log.firstChild);
   while (log.children.length > 60) log.removeChild(log.lastChild);
-}
-
-// ══ MOTOR ══
-function toggleMotor() {
-  motorOn = !motorOn;
-  if (!motorOn) autoTriggered = false;
-  updateMotorUI();
-  notify(motorOn ? 'ok' : 'warn',
-    motorOn ? 'PUMP STARTED' : 'PUMP STOPPED',
-    motorOn ? 'Water pump is now running.' : 'Pump has been manually stopped.');
-
-  // Track runtime
-  if (motorOn) {
-    pumpTimer = setInterval(() => {
-      pumpRuntimeSec++;
-      const m = Math.floor(pumpRuntimeSec / 60), s = pumpRuntimeSec % 60;
-      $('pumpRuntime').textContent = m > 0 ? `${m}m ${s}s` : `${s}s`;
-    }, 1000);
-  } else {
-    if (pumpTimer) { clearInterval(pumpTimer); pumpTimer = null; }
-  }
-}
-
-function updateMotorUI() {
-  const ring  = $('motorRing');
-  const stLab = $('motorStateLabel');
-  const hint  = $('motorHint');
-  const btn   = $('motorBtn');
-  const tog   = $('motorToggle');
-
-  if (motorOn) {
-    ring.classList.add('on');
-    stLab.className = 'motor-state-label on'; stLab.textContent = 'RUNNING';
-    hint.textContent = autoTriggered ? 'Auto-watering active' : 'Manual mode';
-    btn.textContent  = 'STOP PUMP'; btn.className = 'motor-cta stop';
-    tog.classList.add('on');
-  } else {
-    ring.classList.remove('on');
-    stLab.className = 'motor-state-label off'; stLab.textContent = 'IDLE';
-    hint.textContent = 'Toggle to activate pump';
-    btn.textContent  = 'START PUMP'; btn.className = 'motor-cta';
-    tog.classList.remove('on');
-  }
 }
 
 // ══ NOTIFICATIONS ══
