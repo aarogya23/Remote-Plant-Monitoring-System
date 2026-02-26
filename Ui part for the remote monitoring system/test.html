@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlantOS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f8f9;
+    --white: #ffffff;
+    --border: #e8eaed;
+    --border-light: #f1f3f5;
+    --text: #1c1e21;
+    --muted: #8a9099;
+    --light-muted: #c4c9d0;
+    --green: #22c55e;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+    --blue: #3b82f6;
+    --blue-bg: #eff6ff;
+    --blue-border: #bfdbfe;
+    --amber: #f59e0b;
+    --amber-bg: #fffbeb;
+    --amber-border: #fde68a;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --red-border: #fecaca;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.04);
+    --radius: 14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;font-size:14px;}
+  .layout{display:flex;min-height:100vh;}
+  .sidebar{width:220px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:22px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .logo-mark{width:34px;height:34px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(34,197,94,0.3);}
+  .logo-name{font-family:'Fraunces',serif;font-size:18px;font-weight:700;letter-spacing:-0.3px;}
+  .sidebar-section{padding:12px 12px 4px;font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--light-muted);margin-top:8px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:2px 8px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:background .15s,color .15s;text-decoration:none;}
+  .nav-item:hover{background:var(--bg);color:var(--text);}
+  .nav-item.active{background:var(--green-bg);color:#16a34a;}
+  .nav-icon{font-size:15px;width:20px;text-align:center;}
+  .sidebar-bottom{margin-top:auto;padding:16px;border-top:1px solid var(--border-light);}
+  .device-chip{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+  .device-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+  .device-name{font-size:12px;font-weight:600;}
+  .device-status{font-size:10px;color:var(--green);font-weight:500;}
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+  .topbar h1{font-family:'Fraunces',serif;font-size:20px;font-weight:700;letter-spacing:-0.3px;}
+  .topbar p{font-size:12px;color:var(--muted);margin-top:1px;}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .live-badge{display:flex;align-items:center;gap:6px;background:var(--green-bg);border:1px solid var(--green-border);color:#16a34a;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;}
+  .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.25;}}
+  .btn-outline{border:1px solid var(--border);background:var(--white);border-radius:9px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:background .15s;}
+  .btn-outline:hover{background:var(--bg);}
+  .update-time{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .content{padding:24px 28px;flex:1;}
+  .metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .metric-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);transition:box-shadow .2s,transform .2s;position:relative;overflow:hidden;}
+  .metric-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .metric-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .metric-icon-wrap{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .metric-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+  .metric-label{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:4px;}
+  .metric-value{font-family:'Fraunces',serif;font-size:32px;font-weight:700;line-height:1;letter-spacing:-0.5px;}
+  .metric-unit{font-size:15px;font-weight:400;color:var(--muted);margin-left:2px;}
+  .metric-footer{margin-top:14px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+  .trend-chip{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;}
+  .trend-up{background:var(--green-bg);color:#16a34a;}
+  .trend-down{background:var(--red-bg);color:#dc2626;}
+  .trend-flat{background:var(--amber-bg);color:#d97706;}
+  .mini-bar{margin-top:12px;height:4px;background:var(--border-light);border-radius:2px;overflow:visible;position:relative;}
+  .mini-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;position:relative;}
+  .mini-bar-thumb{position:absolute;right:-1px;top:-3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.15);}
+  .mini-bar-zone{position:absolute;top:0;height:100%;opacity:0.2;border-radius:1px;}
+  .grid-main{display:grid;grid-template-columns:1fr 320px;gap:14px;margin-bottom:20px;}
+  .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);}
+  .card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;}
+  .card-sub{font-size:11px;color:var(--muted);margin-bottom:18px;}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+  .chart-toggle{display:flex;gap:4px;}
+  .toggle-btn{padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:none;font-family:'DM Sans';color:var(--muted);transition:all .15s;}
+  .toggle-btn.active{background:var(--text);color:white;border-color:var(--text);}
+  .health-section{display:flex;flex-direction:column;align-items:center;gap:20px;}
+  .health-ring-wrap{position:relative;width:130px;height:130px;}
+  .health-ring-wrap svg{transform:rotate(-90deg);}
+  .health-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .health-num{font-family:'Fraunces',serif;font-size:34px;font-weight:700;line-height:1;}
+  .health-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+  .health-stats{width:100%;}
+  .hstat-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .hstat-icon{font-size:13px;width:20px;text-align:center;}
+  .hstat-name{font-size:12px;color:var(--muted);flex:1;}
+  .hstat-val{font-size:12px;font-weight:600;font-family:'DM Mono',monospace;}
+  .hstat-bar{width:100%;height:3px;background:var(--border-light);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+  .hstat-fill{height:100%;border-radius:2px;transition:width .8s ease;}
+  .grid-bottom{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+  .table-scroll{max-height:280px;overflow-y:auto;}
+  .table-scroll::-webkit-scrollbar{width:4px;}
+  .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--white);position:sticky;top:0;}
+  tbody td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border-light);font-family:'DM Mono',monospace;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:var(--bg);}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'DM Sans',sans-serif;}
+  .status-pill.good{background:var(--green-bg);color:#16a34a;}
+  .status-pill.warn{background:var(--amber-bg);color:#d97706;}
+  .status-pill.crit{background:var(--red-bg);color:#dc2626;}
+  .pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+  .alert-list{display:flex;flex-direction:column;gap:10px;}
+  .alert-item{display:flex;gap:11px;padding:11px 13px;border-radius:10px;border:1px solid transparent;align-items:flex-start;}
+  .alert-item.info{background:var(--blue-bg);border-color:var(--blue-border);}
+  .alert-item.warn{background:var(--amber-bg);border-color:var(--amber-border);}
+  .alert-item.good{background:var(--green-bg);border-color:var(--green-border);}
+  .alert-item.crit{background:var(--red-bg);border-color:var(--red-border);}
+  .alert-emoji{font-size:14px;margin-top:1px;flex-shrink:0;}
+  .alert-text{font-size:12px;line-height:1.4;flex:1;}
+  .alert-text strong{font-weight:600;display:block;margin-bottom:2px;}
+  .alert-time{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .metric-card{animation:fadeUp 0.4s ease both;}
+  .metric-card:nth-child(1){animation-delay:0.05s;}
+  .metric-card:nth-child(2){animation-delay:0.1s;}
+  .metric-card:nth-child(3){animation-delay:0.15s;}
+  .metric-card:nth-child(4){animation-delay:0.2s;}
+  .card{animation:fadeUp 0.4s ease 0.2s both;}
+  @keyframes row-flash{from{background:var(--green-bg);}to{background:transparent;}}
+  .new-row td{animation:row-flash 1.8s ease;}
+  .chart-wrap{position:relative;height:200px;}
+  @media(max-width:1100px){.metrics-row{grid-template-columns:1fr 1fr;}.grid-main{grid-template-columns:1fr;}.grid-bottom{grid-template-columns:1fr;}}
+  @media(max-width:700px){.sidebar{display:none;}.main{margin-left:0;}.metrics-row{grid-template-columns:1fr 1fr;}.content{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">🌿</div>
+      <span class="logo-name">PlantOS</span>
+    </div>
+    <div class="sidebar-section">Main</div>
+    <a class="nav-item active" href="#"><span class="nav-icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="report.html"><span class="nav-icon">📈</span> Reports</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Alerts</a>
+    <div class="sidebar-section">Settings</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Config</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔌</span> Device</a>
+    <div class="sidebar-bottom">
+      <div class="device-chip">
+        <div class="device-dot"></div>
+        <div>
+          <div class="device-name">ESP32-A3F1</div>
+          <div class="device-status">● Online</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1>Plant Dashboard</h1>
+        <p id="last-updated">Fetching latest data…</p>
+      </div>
+      <div class="topbar-right">
+        <span class="update-time" id="clock">—</span>
+        <div class="live-badge"><span class="live-dot"></span> Live</div>
+        <button class="btn-outline" onclick="window.location.href='report.html'">📊 Reports</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-top">
+            <div class="metric-icon-wrap" style="background:var(--red-bg);">🌡️</div>
+            <span class="metric-badge trend-flat" id="temp-badge">—</span>
+          </div>
+          <div class="metric-label">Temperature</div>
+          <div class="metric-value" id="temp-val" style="color:#dc2626;">—<span class="metric-unit">°C</span></div>
+          <div class="mini-bar">
+            <div class="mini-bar-zone" style="left:36%;width:14%;background:#dc2626;"></div>
+            <div class="mini-bar-fill" id="temp-bar" style="width:0%;background:#ef4444;">
+              <div class="mini-bar-thumb" style="background:#ef4444;"></div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <span class="trend-chip trend-flat" id="temp-trend">—</span>
+            <span>Optimal 18–25°C</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <div class="metric-icon-wrap" style="background:var(--blue-bg);">💧</div>
+            <span class="metric-badge trend-flat" id="hum-badge">—</span>
+          </div>
+          <div class="metric-label">Humidity</div>
+          <div class="metric-value" id="hum-val" style="color:#2563eb;">—<span class="metric-unit">%</span></div>
+          <div class="mini-bar">
+            <div class="mini-bar-zone" style="left:40%;width:30%;background:#3b82f6;"></div>
+            <div class="mini-bar-fill" id="hum-bar" style="width:0%;background:#3b82f6;">
+              <div class="mini-bar-thumb" style="background:#3b82f6;"></div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <span class="trend-chip trend-flat" id="hum-trend">—</span>
+            <span>Optimal 40–70%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <div class="metric-icon-wrap" style="background:var(--green-bg);">🌱</div>
+            <span class="metric-badge trend-flat" id="soil-badge">—</span>
+          </div>
+          <div class="metric-label">Soil Moisture</div>
+          <div class="metric-value" id="soil-val" style="color:#16a34a;">—<span class="metric-unit">%</span></div>
+          <div class="mini-bar">
+            <div class="mini-bar-zone" style="left:35%;width:30%;background:#22c55e;"></div>
+            <div class="mini-bar-fill" id="soil-bar" style="width:0%;background:#22c55e;">
+              <div class="mini-bar-thumb" style="background:#22c55e;"></div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <span class="trend-chip trend-flat" id="soil-trend">—</span>
+            <span>Optimal 35–65%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-top">
+            <div class="metric-icon-wrap" style="background:var(--amber-bg);">☀️</div>
+            <span class="metric-badge trend-flat" id="lux-badge">—</span>
+          </div>
+          <div class="metric-label">Light Level</div>
+          <div class="metric-value" id="lux-val" style="color:#d97706;">—<span class="metric-unit">lx</span></div>
+          <div class="mini-bar">
+            <div class="mini-bar-zone" style="left:20%;width:50%;background:#f59e0b;"></div>
+            <div class="mini-bar-fill" id="lux-bar" style="width:0%;background:#f59e0b;">
+              <div class="mini-bar-thumb" style="background:#f59e0b;"></div>
+            </div>
+          </div>
+          <div class="metric-footer">
+            <span class="trend-chip trend-flat" id="lux-trend">—</span>
+            <span>Optimal 2k–7k lux</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-main">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Sensor Readings</div>
+              <div class="card-sub">Live rolling history</div>
+            </div>
+            <div class="chart-toggle">
+              <button class="toggle-btn active" onclick="setMode('24h',this)">24H</button>
+              <button class="toggle-btn" onclick="setMode('7d',this)">7D</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Plant Health</div>
+          <div class="card-sub">Composite score from all sensors</div>
+          <div class="health-section">
+            <div class="health-ring-wrap">
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="54" fill="none" stroke="#f1f3f5" stroke-width="9"/>
+                <circle id="health-arc" cx="65" cy="65" r="54" fill="none" stroke="#22c55e" stroke-width="9"
+                  stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"
+                  style="transition:stroke-dashoffset 1s ease,stroke .5s;"/>
+              </svg>
+              <div class="health-center">
+                <div class="health-num" id="health-val">—</div>
+                <div class="health-label">Health</div>
+              </div>
+            </div>
+            <div class="health-stats">
+              <div class="hstat-row"><span class="hstat-icon">🌡️</span><span class="hstat-name">Temp</span><span class="hstat-val" id="hs-temp">—</span></div>
+              <div class="hstat-bar"><div class="hstat-fill" id="hb-temp" style="width:0%;background:#ef4444;"></div></div>
+              <div class="hstat-row"><span class="hstat-icon">💧</span><span class="hstat-name">Humidity</span><span class="hstat-val" id="hs-hum">—</span></div>
+              <div class="hstat-bar"><div class="hstat-fill" id="hb-hum" style="width:0%;background:#3b82f6;"></div></div>
+              <div class="hstat-row"><span class="hstat-icon">🌱</span><span class="hstat-name">Soil</span><span class="hstat-val" id="hs-soil">—</span></div>
+              <div class="hstat-bar"><div class="hstat-fill" id="hb-soil" style="width:0%;background:#22c55e;"></div></div>
+              <div class="hstat-row"><span class="hstat-icon">☀️</span><span class="hstat-name">Light</span><span class="hstat-val" id="hs-lux">—</span></div>
+              <div class="hstat-bar"><div class="hstat-fill" id="hb-lux" style="width:0%;background:#f59e0b;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-bottom">
+        <div class="card">
+          <div class="card-header" style="margin-bottom:14px;">
+            <div>
+              <div class="card-title">Data Log</div>
+              <div class="card-sub" style="margin-bottom:0;">Recent sensor readings from ESP32</div>
+            </div>
+            <span id="log-count" style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;">0 records</span>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Time</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>Light</th><th>Status</th></tr></thead>
+              <tbody id="log-body">
+                <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px;font-family:'DM Sans';">Waiting for ESP32 data…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:4px;">Alerts</div>
+          <div class="card-sub">System notifications</div>
+          <div class="alert-list" id="alert-list">
+            <div class="alert-item info">
+              <span class="alert-emoji">ℹ️</span>
+              <div>
+                <div class="alert-text"><strong>System Online</strong>Waiting for first sensor reading.</div>
+                <div class="alert-time" id="startup-ts">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8080/api/sensor';
+const INTERVAL=5000;
+let history=[],chartMode='24h',chart;
+
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+setInterval(updateClock,1000);updateClock();
+document.getElementById('startup-ts').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+const fmt=(v,d=1)=>v!=null?Number(v).toFixed(d):'—';
+const pct=(v,max)=>Math.min(100,Math.max(0,(v/max)*100));
+function timeStr(iso){return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function status(d){let b=0;if(d.temperature<10||d.temperature>35)b++;if(d.humidity<30||d.humidity>85)b++;if(d.soilMoisture<15||d.soilMoisture>85)b++;return b===0?'good':b===1?'warn':'crit';}
+function statusLabel(c){return{good:'Optimal',warn:'Warning',crit:'Critical'}[c];}
+function health(d){let s=100;if(d.temperature<10||d.temperature>35)s-=30;else if(d.temperature<15||d.temperature>30)s-=15;if(d.humidity<20||d.humidity>90)s-=25;else if(d.humidity<35||d.humidity>80)s-=10;if(d.soilMoisture<15||d.soilMoisture>85)s-=25;else if(d.soilMoisture<30||d.soilMoisture>75)s-=10;const lux=d.lightLevel||0;if(lux<500||lux>10000)s-=20;else if(lux<1500||lux>8000)s-=10;return Math.max(0,Math.min(100,s));}
+
+function initChart(){
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[
+    {label:'Temperature (°C)',data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.06)',fill:true,tension:0.4,pointRadius:0,borderWidth:1.5},
+    {label:'Humidity (%)',data:[],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.06)',fill:true,tension:0.4,pointRadius:0,borderWidth:1.5},
+    {label:'Soil (%)',data:[],borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.06)',fill:true,tension:0.4,pointRadius:0,borderWidth:1.5},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#8a9099',font:{family:'DM Sans',size:11},boxWidth:10,usePointStyle:true,pointStyle:'circle'}},
+    tooltip:{backgroundColor:'#1c1e21',titleColor:'#fff',bodyColor:'#c4c9d0',borderColor:'#2e3138',borderWidth:1,padding:10,titleFont:{family:'DM Sans',size:11},bodyFont:{family:'DM Mono',size:11}}},
+    scales:{x:{ticks:{color:'#8a9099',font:{family:'DM Mono',size:10},maxTicksLimit:8},grid:{color:'#f1f3f5'}},
+    y:{ticks:{color:'#8a9099',font:{family:'DM Mono',size:10}},grid:{color:'#f1f3f5'}}}}});
+}
+
+function setMode(mode,btn){chartMode=mode;document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');refreshChart();}
+
+function refreshChart(){
+  const data=chartMode==='24h'?history.slice(-48):history;
+  if(!data.length)return;
+  chart.data.labels=data.map(d=>timeStr(d.timestamp));
+  chart.data.datasets[0].data=data.map(d=>d.temperature);
+  chart.data.datasets[1].data=data.map(d=>d.humidity);
+  chart.data.datasets[2].data=data.map(d=>d.soilMoisture);
+  chart.update('none');
+}
+
+function updateMetrics(d,prev){
+  const diff=(cur,p)=>prev?cur-p:null;
+  function trendChip(id,val,badgeId){
+    const el=document.getElementById(id),badge=document.getElementById(badgeId);
+    if(val===null){el.textContent='—';return;}
+    const abs=Math.abs(val).toFixed(1);
+    if(Math.abs(val)<0.5){el.textContent='→ Stable';el.className='trend-chip trend-flat';badge.className='metric-badge trend-flat';badge.textContent='Stable';}
+    else if(val>0){el.textContent=`↑ +${abs}`;el.className='trend-chip trend-up';badge.className='metric-badge trend-up';badge.textContent=`+${abs}`;}
+    else{el.textContent=`↓ ${abs}`;el.className='trend-chip trend-down';badge.className='metric-badge trend-down';badge.textContent=`-${abs}`;}
+  }
+  document.getElementById('temp-val').innerHTML=`${fmt(d.temperature)}<span class="metric-unit">°C</span>`;
+  document.getElementById('hum-val').innerHTML=`${fmt(d.humidity)}<span class="metric-unit">%</span>`;
+  document.getElementById('soil-val').innerHTML=`${fmt(d.soilMoisture)}<span class="metric-unit">%</span>`;
+  document.getElementById('lux-val').innerHTML=`${Math.round(d.lightLevel||0)}<span class="metric-unit">lx</span>`;
+  document.getElementById('temp-bar').style.width=pct(d.temperature,50)+'%';
+  document.getElementById('hum-bar').style.width=d.humidity+'%';
+  document.getElementById('soil-bar').style.width=d.soilMoisture+'%';
+  document.getElementById('lux-bar').style.width=pct(d.lightLevel||0,10000)+'%';
+  if(prev){trendChip('temp-trend',diff(d.temperature,prev.temperature),'temp-badge');trendChip('hum-trend',diff(d.humidity,prev.humidity),'hum-badge');trendChip('soil-trend',diff(d.soilMoisture,prev.soilMoisture),'soil-badge');trendChip('lux-trend',diff(d.lightLevel||0,prev.lightLevel||0),'lux-badge');}
+  const h=health(d);
+  document.getElementById('health-val').textContent=h+'%';
+  const arc=document.getElementById('health-arc');
+  arc.style.strokeDashoffset=339.3-(339.3*h/100);
+  arc.style.stroke=h>=80?'#22c55e':h>=55?'#f59e0b':'#ef4444';
+  document.getElementById('hs-temp').textContent=fmt(d.temperature)+'°C';
+  document.getElementById('hs-hum').textContent=fmt(d.humidity)+'%';
+  document.getElementById('hs-soil').textContent=fmt(d.soilMoisture)+'%';
+  document.getElementById('hs-lux').textContent=Math.round(d.lightLevel||0)+' lx';
+  document.getElementById('hb-temp').style.width=pct(d.temperature,50)+'%';
+  document.getElementById('hb-hum').style.width=d.humidity+'%';
+  document.getElementById('hb-soil').style.width=d.soilMoisture+'%';
+  document.getElementById('hb-lux').style.width=pct(d.lightLevel||0,10000)+'%';
+  document.getElementById('last-updated').textContent='Last reading: '+new Date(d.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function renderLog(data){
+  const tbody=document.getElementById('log-body');tbody.innerHTML='';
+  const rows=[...data].reverse().slice(0,60);
+  rows.forEach((d,i)=>{
+    const s=status(d);const tr=document.createElement('tr');
+    if(i===0)tr.classList.add('new-row');
+    tr.innerHTML=`<td>${timeStr(d.timestamp)}</td><td style="color:#dc2626;">${fmt(d.temperature)}°C</td><td style="color:#2563eb;">${fmt(d.humidity)}%</td><td style="color:#16a34a;">${fmt(d.soilMoisture)}%</td><td style="color:#d97706;">${Math.round(d.lightLevel||0)}</td><td><span class="status-pill ${s}"><span class="pill-dot"></span>${statusLabel(s)}</span></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('log-count').textContent=data.length+' records';
+}
+
+let lastAlertSoil=false,lastAlertTemp=false,lastAlertHum=false;
+function addAlert(type,emoji,title,msg){
+  const list=document.getElementById('alert-list');const item=document.createElement('div');
+  item.className=`alert-item ${type}`;
+  item.innerHTML=`<span class="alert-emoji">${emoji}</span><div><div class="alert-text"><strong>${title}</strong>${msg}</div><div class="alert-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+  list.insertBefore(item,list.firstChild);while(list.children.length>8)list.removeChild(list.lastChild);
+}
+function checkAlerts(d){
+  const soilLow=d.soilMoisture<25,tempHigh=d.temperature>32,humLow=d.humidity<30;
+  if(soilLow&&!lastAlertSoil)addAlert('warn','🚿','Low Soil Moisture',`Soil at ${fmt(d.soilMoisture)}% — watering recommended.`);
+  if(tempHigh&&!lastAlertTemp)addAlert('crit','🌡️','High Temperature',`${fmt(d.temperature)}°C detected — check ventilation.`);
+  if(humLow&&!lastAlertHum)addAlert('warn','💦','Low Humidity',`Humidity at ${fmt(d.humidity)}% — consider misting.`);
+  lastAlertSoil=soilLow;lastAlertTemp=tempHigh;lastAlertHum=humLow;
+}
+
+async function fetchLatest(){
+  try{const res=await fetch(`${API}/latest`);if(!res.ok)throw new Error();const d=await res.json();if(!d)return;const prev=history[history.length-1];const isNew=!prev||new Date(d.timestamp)>new Date(prev.timestamp);if(isNew){history.push(d);checkAlerts(d);}updateMetrics(d,prev);refreshChart();}
+  catch{useDemoData();}
+}
+async function fetchAll(){try{const res=await fetch(API);if(!res.ok)throw new Error();const data=await res.json();if(data.length){history=data;renderLog(data);refreshChart();}}catch{}}
+
+let demoTick=0;const base={temperature:22,humidity:55,soilMoisture:50,lightLevel:3800};
+function useDemoData(){
+  demoTick++;const n=()=>(Math.random()-0.5)*3;
+  const d={id:1000+demoTick,timestamp:new Date().toISOString(),temperature:base.temperature+n(),humidity:base.humidity+n(),soilMoisture:Math.max(10,base.soilMoisture-demoTick*0.05+n()),lightLevel:Math.max(0,base.lightLevel+n()*300)};
+  const prev=history[history.length-1];history.push(d);if(history.length>200)history.shift();
+  checkAlerts(d);updateMetrics(d,prev);renderLog(history);refreshChart();
+}
+
+initChart();fetchAll();fetchLatest();setInterval(fetchLatest,INTERVAL);
+</script>
+</body>
+</html>
