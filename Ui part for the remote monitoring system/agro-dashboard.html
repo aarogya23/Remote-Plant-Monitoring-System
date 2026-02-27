@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🌿 Remote Plant Monitoring Dashboard</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f4f7f9;
+    }
+
+    header {
+        background: #2e7d32;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .card-container {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+        margin: 20px;
+    }
+
+    .card {
+        background: white;
+        width: 220px;
+        padding: 20px;
+        margin: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: 0.3s;
+    }
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+
+    .card h2 {
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .card p {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2e7d32;
+    }
+
+    .report-section {
+        margin: 20px;
+    }
+
+    .report-section h2 {
+        text-align: center;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background: #2e7d32;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background: #f2f2f2;
+    }
+
+    .status {
+        text-align: center;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    .online {
+        color: green;
+    }
+
+    .offline {
+        color: red;
+    }
+</style>
+
+</head>
+<body>
+
+<header>
+    <h1>🌿 Remote Plant Monitoring System</h1>
+</header>
+
+<section class="card-container">
+    <div class="card">
+        <h2>🌡 Temperature</h2>
+        <p id="temperature">-- °C</p>
+    </div>
+
+    <div class="card">
+        <h2>💧 Humidity</h2>
+        <p id="humidity">-- %</p>
+    </div>
+
+    <div class="card">
+        <h2>🌱 Soil Moisture</h2>
+        <p id="soil">--</p>
+    </div>
+
+    <div class="card">
+        <h2>🧪 pH Level</h2>
+        <p id="ph">--</p>
+    </div>
+</section>
+
+<div class="status" id="serverStatus">Checking Server...</div>
+
+<section class="report-section">
+    <h2>📊 Sensor Data Report</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Temperature</th>
+                <th>Humidity</th>
+                <th>Soil</th>
+                <th>pH</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody id="reportTable">
+        </tbody>
+    </table>
+</section>
+
+<script>
+const API_URL = "http://localhost:8080/api/sensor";
+
+// Fetch Latest Data
+async function fetchLatestData() {
+    try {
+        const response = await fetch(`${API_URL}/latest`);
+        if (!response.ok) throw new Error("Server error");
+
+        const data = await response.json();
+
+        if (data) {
+            document.getElementById("temperature").innerText = data.temperature + " °C";
+            document.getElementById("humidity").innerText = data.humidity + " %";
+            document.getElementById("soil").innerText = data.soilMoisture;
+            document.getElementById("ph").innerText = data.ph;
+            document.getElementById("serverStatus").innerHTML =
+                "🟢 Server Connected";
+            document.getElementById("serverStatus").className = "status online";
+        }
+    } catch (error) {
+        document.getElementById("serverStatus").innerHTML =
+            "🔴 Server Offline";
+        document.getElementById("serverStatus").className = "status offline";
+        console.error("Error fetching latest data:", error);
+    }
+}
+
+// Fetch All Data for Report
+async function fetchReport() {
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        const table = document.getElementById("reportTable");
+        table.innerHTML = "";
+
+        data.slice().reverse().forEach(item => {
+            const row = `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.temperature}</td>
+                    <td>${item.humidity}</td>
+                    <td>${item.soilMoisture}</td>
+                    <td>${item.ph}</td>
+                    <td>${item.timestamp}</td>
+                </tr>
+            `;
+            table.innerHTML += row;
+        });
+
+    } catch (error) {
+        console.error("Error fetching report:", error);
+    }
+}
+
+// Auto Refresh Every 5 Seconds
+setInterval(() => {
+    fetchLatestData();
+    fetchReport();
+}, 5000);
+
+// Load Immediately
+fetchLatestData();
+fetchReport();
+</script>
+
+</body>
+</html>
