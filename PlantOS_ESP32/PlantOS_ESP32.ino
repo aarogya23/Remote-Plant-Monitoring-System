@@ -19,7 +19,7 @@ IPAddress ap_ip(192, 168, 4, 1);            // Fixed IP — open http://192.168.
 
 // ================= OBJECTS =================
 DHT dht(DHT_PIN, DHT_TYPE);
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
 WebServer server(80);
 
 // ================= SETTINGS =================

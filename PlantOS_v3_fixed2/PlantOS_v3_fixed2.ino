@@ -1,13 +1,37 @@
 // ================================================================
-//  PlantOS v3 — ESP32 Hotspot Dashboard
+//  PlantOS v3 — ESP32 Hotspot Dashboard  [FIXED v2]
 //  Sensors : Capacitive Soil | BH1750 Light | DHT22 | pH | 2×18650
 //  Output  : LCD 16×2 I2C | Buzzer | LED | Web Dashboard (AJAX)
+//
+//  FIXES IN THIS VERSION:
+//  1. PH_OFFSET corrected to 14.16 (water now reads ~7.0)
+//  2. Buzzer cooldown timers — no more non-stop ringing
+//     - Dry alert  : max once per 30 seconds
+//     - pH alert   : max once per 60 seconds
+//     - Bat alert  : max once per 2 minutes
+//  3. pH voltage printed in Serial for easy future recalibration
+//
+//  HOW TO FINE-TUNE pH IF STILL OFF:
+//    Open Serial Monitor @ 115200 baud
+//    Dip probe in plain water, note "rawV" value
+//    PH_OFFSET = 7.0 + (5.70 × rawV)
+//    Plug that number in below and re-upload
+//
+//  PIN ASSIGNMENTS:
+//  SOIL_PIN → GPIO34  (ADC1_CH6, input-only)
+//  PH_PIN   → GPIO35  (ADC1_CH7, input-only)
+//  BAT_PIN  → GPIO33  (ADC1_CH5)
+//  DHT_PIN  → GPIO4
+//  BUZZER   → GPIO19
+//  LED      → GPIO18
+//  BH1750   → SDA=GPIO21, SCL=GPIO22  (I2C 0x23)
+//  LCD      → SDA=GPIO21, SCL=GPIO22  (I2C 0x27)
 // ================================================================
 
 #include <DHT.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <BH1750.h>          // "BH1750" by Christopher Laws
+#include <BH1750.h>
 #include <WiFi.h>
 #include <WebServer.h>
 
@@ -21,15 +45,13 @@ IPAddress   ap_ip(192, 168, 4, 1);
 // ================================================================
 //  PIN DEFINITIONS
 // ================================================================
-#define SOIL_PIN     2    // Capacitive soil AOUT  → GPIO2
-#define PH_PIN      34    // pH sensor AOUT        → GPIO34 (ADC1, input-only)
-#define DHT_PIN      4    // DHT22 data pin
+#define SOIL_PIN     34
+#define PH_PIN       35
+#define DHT_PIN       4
 #define DHT_TYPE  DHT22
-#define BUZZER_PIN  19
-#define LED_PIN     18    // LED moved from GPIO2  → GPIO18
-#define BAT_PIN     33    // Voltage divider        → GPIO33 (ADC1)
-// BH1750 → SDA=GPIO21, SCL=GPIO22  (I2C 0x23, ADDR pin → GND)
-// LCD    → SDA=GPIO21, SCL=GPIO22  (I2C 0x27, shared bus)
+#define BUZZER_PIN   19
+#define LED_PIN      18
+#define BAT_PIN      33
 
 // ================================================================
 //  OBJECTS
@@ -43,20 +65,23 @@ WebServer         server(80);
 //  CALIBRATION & CONSTANTS
 // ================================================================
 
-// ---- Capacitive soil (HIGH=dry, LOW=wet — inverse of resistive) ----
-int SOIL_DRY = 3200;    // raw ADC in open air   — tune after calibration
-int SOIL_WET = 1500;    // raw ADC in water       — tune after calibration
+// ---- Capacitive soil (HIGH=dry, LOW=wet) ----
+int SOIL_DRY = 3200;
+int SOIL_WET = 1500;
 
 // ---- pH sensor ----
-// pH = ph_slope × Voltage + ph_offset
-// Default slope ≈ -5.70 for most cheap analog pH modules (inverse: higher V = lower pH)
-// Calibrate with pH 4 and pH 7 buffer solutions and adjust below
+// PH_OFFSET FIXED: was 15.90 → gave 8.74 in water
+//                  now 14.16 → gives ~7.0 in water  ✅
+// To recalibrate:
+//   1. Open Serial Monitor @ 115200
+//   2. Dip probe in plain water
+//   3. Note rawV value printed
+//   4. PH_OFFSET = 7.0 + (5.70 × rawV)
 float PH_SLOPE  = -5.70;
-float PH_OFFSET =  21.34;   // tune: PH_OFFSET = pH_expected - PH_SLOPE × Vmeasured
+float PH_OFFSET =  14.16;   // ✅ FIXED (was 15.90 → caused 8.74 reading)
 
 // ---- 2S 18650 battery (8.4V full, 6.0V empty) ----
-// Voltage divider: R1=100kΩ (BAT+→pin), R2=47kΩ (pin→GND)
-// Vpin = Vbat × R2/(R1+R2)  →  Vbat = Vpin × (R1+R2)/R2
+// Voltage divider: R1=100kΩ, R2=47kΩ
 const float R1          = 100000.0;
 const float R2          =  47000.0;
 const float VREF        =       3.3;
@@ -86,6 +111,17 @@ const unsigned long LCD_PAGE_TIME = 3000;
 const byte          SAMPLE_COUNT  = 30;
 
 // ================================================================
+//  BUZZER COOLDOWN TIMERS
+// ================================================================
+unsigned long lastDryAlertTime = 0;
+unsigned long lastPhAlertTime  = 0;
+unsigned long lastBatAlertTime = 0;
+
+const unsigned long DRY_ALERT_INTERVAL = 30000;   // 30 seconds
+const unsigned long PH_ALERT_INTERVAL  = 60000;   // 60 seconds
+const unsigned long BAT_ALERT_INTERVAL = 120000;  // 2 minutes
+
+// ================================================================
 //  HELPERS
 // ================================================================
 int readAverage(byte pin) {
@@ -97,10 +133,30 @@ int readAverage(byte pin) {
   return total / SAMPLE_COUNT;
 }
 
-void beep(int freq, int ms) { tone(BUZZER_PIN, freq); delay(ms); noTone(BUZZER_PIN); }
-void dryAlert()  { for (int i=0;i<3;i++){ beep(2000,200); delay(100); } }
-void batAlert()  { beep(800,500); delay(200); beep(800,500); }
-void phAlert()   { beep(1200,300); delay(150); beep(1200,300); }
+void beep(int freq, int ms) {
+  tone(BUZZER_PIN, freq);
+  delay(ms);
+  noTone(BUZZER_PIN);
+}
+
+void dryAlert() {
+  for (int i = 0; i < 3; i++) {
+    beep(2000, 200);
+    delay(100);
+  }
+}
+
+void batAlert() {
+  beep(800, 500);
+  delay(200);
+  beep(800, 500);
+}
+
+void phAlert() {
+  beep(1200, 300);
+  delay(150);
+  beep(1200, 300);
+}
 
 // ================================================================
 //  READ BATTERY
@@ -119,35 +175,39 @@ void readBattery() {
 }
 
 // ================================================================
-//  LCD PAGES  (4 pages covering all sensors)
+//  LCD PAGES
 // ================================================================
 void showLCDPage(byte page) {
   lcd.clear();
   switch (page) {
     case 0:
-      lcd.setCursor(0,0);
-      lcd.print("Soil:"); lcd.print(g_soilPercent); lcd.print("% "); lcd.print(g_soilStatus.substring(0,6));
-      lcd.setCursor(0,1);
-      lcd.print("T:"); lcd.print(g_temp,1); lcd.print("C H:"); lcd.print((int)g_humidity); lcd.print("%");
+      lcd.setCursor(0, 0);
+      lcd.print("Soil:"); lcd.print(g_soilPercent); lcd.print("% ");
+      lcd.print(g_soilStatus.substring(0, 6));
+      lcd.setCursor(0, 1);
+      lcd.print("T:"); lcd.print(g_temp, 1);
+      lcd.print("C H:"); lcd.print((int)g_humidity); lcd.print("%");
       break;
     case 1:
-      lcd.setCursor(0,0);
-      lcd.print("pH:"); lcd.print(g_pH,2); lcd.print(" "); lcd.print(g_phStatus.substring(0,7));
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 0);
+      lcd.print("pH:"); lcd.print(g_pH, 2);
+      lcd.print(" "); lcd.print(g_phStatus.substring(0, 7));
+      lcd.setCursor(0, 1);
       lcd.print("Light:"); lcd.print((int)g_lux); lcd.print("lx");
       break;
     case 2:
-      lcd.setCursor(0,0);
-      lcd.print("Bat:"); lcd.print(g_batVoltage,1); lcd.print("V "); lcd.print(g_batPercent); lcd.print("%");
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 0);
+      lcd.print("Bat:"); lcd.print(g_batVoltage, 1);
+      lcd.print("V "); lcd.print(g_batPercent); lcd.print("%");
+      lcd.setCursor(0, 1);
       lcd.print(g_batStatus); lcd.print(" ");
       if (g_soilPercent < 30) lcd.print("WATER!");
-      else lcd.print("OK :)");
+      else                     lcd.print("OK :)");
       break;
     case 3:
-      lcd.setCursor(0,0);
+      lcd.setCursor(0, 0);
       lcd.print("IP:"); lcd.print(ap_ip);
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       lcd.print("Health:"); lcd.print("see app");
       break;
   }
@@ -159,29 +219,23 @@ void showLCDPage(byte page) {
 int calcHealth() {
   int score = 100;
 
-  // Soil
   if      (g_soilPercent < 20) score -= 30;
   else if (g_soilPercent < 40) score -= 15;
   else if (g_soilPercent > 85) score -= 10;
 
-  // pH (most plants: 5.5–7.5)
   if      (g_pH < 5.0 || g_pH > 8.0) score -= 25;
   else if (g_pH < 5.5 || g_pH > 7.5) score -= 10;
 
-  // Temperature
   if      (g_temp < 10 || g_temp > 40) score -= 25;
   else if (g_temp < 15 || g_temp > 35) score -= 10;
 
-  // Humidity
   if      (g_humidity < 20 || g_humidity > 90) score -= 20;
   else if (g_humidity < 30 || g_humidity > 80) score -=  8;
 
-  // Light
   if      (g_lux <  100)  score -= 20;
   else if (g_lux <  500)  score -= 10;
   else if (g_lux > 80000) score -= 10;
 
-  // Battery
   if (g_batPercent < 10) score -= 15;
 
   return constrain(score, 0, 100);
@@ -193,22 +247,22 @@ int calcHealth() {
 void handleData() {
   int health = calcHealth();
   String j = "{";
-  j += "\"temp\":"          + String(g_temp,1)       + ",";
-  j += "\"humidity\":"      + String(g_humidity,1)   + ",";
-  j += "\"soil\":"          + String(g_soilPercent)  + ",";
-  j += "\"ph\":"            + String(g_pH,2)         + ",";
-  j += "\"lux\":"           + String((int)g_lux)     + ",";
-  j += "\"batV\":"          + String(g_batVoltage,2) + ",";
-  j += "\"batPct\":"        + String(g_batPercent)   + ",";
-  j += "\"health\":"        + String(health)         + ",";
-  j += "\"soilStatus\":\""  + g_soilStatus           + "\",";
-  j += "\"phStatus\":\""    + g_phStatus             + "\",";
-  j += "\"tempStatus\":\""  + g_tempStatus           + "\",";
-  j += "\"lightStatus\":\"" + g_lightStatus          + "\",";
-  j += "\"batStatus\":\""   + g_batStatus            + "\"";
+  j += "\"temp\":"          + String(g_temp, 1)       + ",";
+  j += "\"humidity\":"      + String(g_humidity, 1)   + ",";
+  j += "\"soil\":"          + String(g_soilPercent)   + ",";
+  j += "\"ph\":"            + String(g_pH, 2)         + ",";
+  j += "\"lux\":"           + String((int)g_lux)      + ",";
+  j += "\"batV\":"          + String(g_batVoltage, 2) + ",";
+  j += "\"batPct\":"        + String(g_batPercent)    + ",";
+  j += "\"health\":"        + String(health)          + ",";
+  j += "\"soilStatus\":\""  + g_soilStatus            + "\",";
+  j += "\"phStatus\":\""    + g_phStatus              + "\",";
+  j += "\"tempStatus\":\""  + g_tempStatus            + "\",";
+  j += "\"lightStatus\":\"" + g_lightStatus           + "\",";
+  j += "\"batStatus\":\""   + g_batStatus             + "\"";
   j += "}";
-  server.sendHeader("Access-Control-Allow-Origin","*");
-  server.send(200,"application/json",j);
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", j);
 }
 
 // ================================================================
@@ -228,7 +282,6 @@ void handleRoot() {
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--card:#fff;--border:#e8ecf0;--text:#1a2332;--muted:#7a8694;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
 body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
-/* SIDEBAR */
 .sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:10}
 .logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-icon{width:36px;height:36px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -244,7 +297,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .device-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px #dcfce7;flex-shrink:0}
 .device-name{font-size:12px;font-weight:600}
 .device-status{font-size:11px;color:#22c55e;font-weight:500}
-/* MAIN */
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
 .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
 .topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
@@ -254,11 +306,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .time-display{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--muted);background:#f8fafc;padding:5px 12px;border-radius:8px;border:1px solid var(--border)}
-/* CONTENT */
 .content{padding:24px 28px;display:flex;flex-direction:column;gap:20px}
 .wifi-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;font-size:12px;color:#1d4ed8;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .alert-banner{padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;transition:all .4s}
-/* 3-column card grid */
 .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .card{background:var(--card);border-radius:14px;padding:18px 20px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
@@ -271,7 +321,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .card-bar-track{height:5px;background:#f1f5f9;border-radius:10px;margin-top:10px;overflow:hidden}
 .card-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
 .status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .3s}
-/* BOTTOM ROW */
 .bottom-row{display:grid;grid-template-columns:1fr 320px;gap:16px}
 .chart-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .chart-title{font-size:15px;font-weight:700}
@@ -281,7 +330,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
 .legend-dot{width:10px;height:10px;border-radius:50%}
-/* HEALTH CARD */
 .health-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .health-title{font-size:15px;font-weight:700}
 .health-sub{font-size:12px;color:var(--muted);margin-top:2px}
@@ -294,6 +342,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .metric-bar{width:72px;height:4px;background:#f1f5f9;border-radius:10px;overflow:hidden}
 .metric-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
 .ip-footer{text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding-bottom:8px}
+.pin-info{background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px 16px;font-size:12px;color:#92400e;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 @keyframes flashUpdate{0%{opacity:1}30%{opacity:.4}100%{opacity:1}}
 .updated{animation:flashUpdate .4s ease}
 @media(max-width:960px){
@@ -305,7 +354,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-icon">&#127807;</div>
@@ -333,7 +381,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
     <div class="topbar-title">
@@ -352,15 +399,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       &#128225; Hotspot: <strong>PlantOS</strong> &nbsp;|&nbsp; Password: <strong>plant1234</strong> &nbsp;|&nbsp; Open: <strong>http://192.168.4.1</strong>
     </div>
 
+    <div class="pin-info">
+      &#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4
+    </div>
+
     <div class="alert-banner" id="alertBanner">
       <span style="font-size:18px" id="alertIcon">&#127807;</span>
       <span id="alertMsg">Plant is healthy &amp; happy</span>
     </div>
 
-    <!-- ROW 1: Temp | Humidity | Soil -->
     <div class="cards-grid">
-
-      <!-- TEMPERATURE -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#127777;</div>
@@ -372,11 +420,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <div class="card-sub">
           <div class="status-dot" id="tempDot" style="background:#22c55e"></div>
           <span id="tempSubStatus" style="color:#22c55e">Normal</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 15–35°C</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 15&#8211;35&#176;C</span>
         </div>
       </div>
-
-      <!-- HUMIDITY -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#128167;</div>
@@ -387,48 +433,40 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <div class="card-bar-track"><div class="card-bar-fill" id="humBar" style="width:0%;background:#3b82f6"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="humDot" style="background:#3b82f6"></div>
-          <span style="color:var(--muted);font-weight:400">Optimal 40–70%</span>
+          <span style="color:var(--muted);font-weight:400">Optimal 40&#8211;70%</span>
         </div>
       </div>
-
-      <!-- SOIL MOISTURE -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#127807;</div>
           <span class="card-delta" id="soilStatus">Moist</span>
         </div>
-        <div class="card-label">Soil Moisture (Cap.)</div>
+        <div class="card-label">Soil Moisture (GPIO34)</div>
         <div><span class="card-value" id="soilVal">--</span><span class="card-unit">%</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="soilBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="soilDot" style="background:#22c55e"></div>
           <span id="soilSubStatus" style="color:#22c55e">Moist</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 35–65%</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 35&#8211;65%</span>
         </div>
       </div>
+    </div>
 
-    </div><!-- end row 1 -->
-
-    <!-- ROW 2: pH | Light | Battery -->
     <div class="cards-grid">
-
-      <!-- pH -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#9878;</div>
           <span class="card-delta" id="phStatus" style="color:#22c55e">Neutral</span>
         </div>
-        <div class="card-label">Soil pH</div>
+        <div class="card-label">Soil pH (GPIO35)</div>
         <div><span class="card-value" id="phVal" style="color:#22c55e">--</span><span class="card-unit">pH</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="phBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="phDot" style="background:#22c55e"></div>
           <span id="phSubStatus" style="color:#22c55e">Neutral</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 5.5–7.5</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 5.5&#8211;7.5</span>
         </div>
       </div>
-
-      <!-- LIGHT -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#9728;</div>
@@ -440,11 +478,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <div class="card-sub">
           <div class="status-dot" id="luxDot" style="background:#f59e0b"></div>
           <span id="luxSubStatus" style="color:#f59e0b">--</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;500–20k lx ideal</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;500&#8211;20k lx ideal</span>
         </div>
       </div>
-
-      <!-- BATTERY -->
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#128267;</div>
@@ -459,15 +495,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <span style="color:var(--muted);font-weight:400">&nbsp;7.4V nominal</span>
         </div>
       </div>
+    </div>
 
-    </div><!-- end row 2 -->
-
-    <!-- BOTTOM ROW: Sparkline + Health Ring -->
     <div class="bottom-row">
-
       <div class="chart-card">
         <div class="chart-title">Sensor History</div>
-        <div class="chart-sub">Live rolling window — last 40 readings</div>
+        <div class="chart-sub">Live rolling window &#8212; last 40 readings</div>
         <div class="chart-area">
           <svg class="sparkline" id="sparkSVG" viewBox="0 0 600 200" preserveAspectRatio="none">
             <line x1="0" y1="40"  x2="600" y2="40"  stroke="#f1f5f9" stroke-width="1"/>
@@ -482,7 +515,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           </svg>
         </div>
         <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Temp (°C)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Temp (&#176;C)</div>
           <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Humidity (%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Soil (%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> pH</div>
@@ -490,10 +523,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         </div>
       </div>
 
-      <!-- HEALTH RING -->
       <div class="health-card">
         <div class="health-title">Plant Health</div>
-        <div class="health-sub">Composite score — all 6 sensors</div>
+        <div class="health-sub">Composite score &#8212; all 6 sensors</div>
         <div class="health-ring-wrap">
           <svg width="150" height="150" viewBox="0 0 150 150">
             <circle cx="75" cy="75" r="54" fill="none" stroke="#f1f5f9" stroke-width="11"/>
@@ -515,7 +547,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
             <span class="metric-icon">&#127777;</span>
             <span class="metric-name">Temp</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mTempBar" style="width:0%;background:#ef4444"></div></div>
-            <span class="metric-val" id="mTempVal">--°C</span>
+            <span class="metric-val" id="mTempVal">--&#176;C</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#128167;</span>
@@ -549,24 +581,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           </div>
         </div>
       </div>
-
-    </div><!-- end bottom-row -->
+    </div>
 
     <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; PlantOS v3 &nbsp;|&nbsp; http://)rawliteral" + ip + R"rawliteral(</div>
 
-  </div><!-- content -->
-</div><!-- main -->
+  </div>
+</div>
 
 <script>
-// ---- COLOR HELPERS ----
-function colorFor(type, val) {
-  if (type==='temp')   return (val<15||val>35)?'#ef4444':'#22c55e';
-  if (type==='hum')    return (val<30||val>80)?'#f59e0b':'#3b82f6';
-  if (type==='soil')   return val<30?'#ef4444':val<40?'#f59e0b':'#22c55e';
-  if (type==='ph')     return (val<5.0||val>8.0)?'#ef4444':(val<5.5||val>7.5)?'#f59e0b':'#22c55e';
-  if (type==='lux')    return val<100?'#ef4444':val<500?'#f59e0b':'#22c55e';
-  if (type==='bat')    return val<30?'#ef4444':val<70?'#f59e0b':'#22c55e';
-  if (type==='health') return val>=75?'#22c55e':val>=50?'#f59e0b':'#ef4444';
+function colorFor(type,val){
+  if(type==='temp')   return (val<15||val>35)?'#ef4444':'#22c55e';
+  if(type==='hum')    return (val<30||val>80)?'#f59e0b':'#3b82f6';
+  if(type==='soil')   return val<30?'#ef4444':val<40?'#f59e0b':'#22c55e';
+  if(type==='ph')     return (val<5.0||val>8.0)?'#ef4444':(val<5.5||val>7.5)?'#f59e0b':'#22c55e';
+  if(type==='lux')    return val<100?'#ef4444':val<500?'#f59e0b':'#22c55e';
+  if(type==='bat')    return val<30?'#ef4444':val<70?'#f59e0b':'#22c55e';
+  if(type==='health') return val>=75?'#22c55e':val>=50?'#f59e0b':'#ef4444';
   return '#22c55e';
 }
 function luxLabel(v){
@@ -577,16 +607,9 @@ function luxLabel(v){
   if(v<50000) return 'Sunny';
   return 'Intense';
 }
-function healthLabel(h){
-  if(h>=80) return 'Excellent';
-  if(h>=60) return 'Good';
-  if(h>=40) return 'Fair';
-  return 'Poor';
-}
 function setColor(el,c){el.style.color=c;}
 function flash(el){el.classList.remove('updated');void el.offsetWidth;el.classList.add('updated');}
 
-// ---- CLOCK ----
 function updateClock(){
   var n=new Date();
   document.getElementById('clockDisp').textContent=
@@ -596,8 +619,7 @@ function updateClock(){
 }
 updateClock(); setInterval(updateClock,1000);
 
-// ---- SPARKLINE ----
-var MAX=40, tD=[],hD=[],sD=[],pD=[],lD=[];
+var MAX=40,tD=[],hD=[],sD=[],pD=[],lD=[];
 for(var i=0;i<MAX;i++){tD.push(0);hD.push(0);sD.push(0);pD.push(7);lD.push(0);}
 
 function pts(data,lo,hi){
@@ -611,7 +633,7 @@ function pts(data,lo,hi){
   return s.trim();
 }
 function pushChart(t,h,s,ph,lux){
-  tD.push(t); hD.push(h); sD.push(s); pD.push(ph); lD.push(lux/1000);
+  tD.push(t);hD.push(h);sD.push(s);pD.push(ph);lD.push(lux/1000);
   if(tD.length>MAX){tD.shift();hD.shift();sD.shift();pD.shift();lD.shift();}
   document.getElementById('tempLine').setAttribute('points',pts(tD,0,60));
   document.getElementById('humLine').setAttribute('points',pts(hD,0,100));
@@ -620,70 +642,61 @@ function pushChart(t,h,s,ph,lux){
   document.getElementById('luxLine').setAttribute('points',pts(lD,0,80));
 }
 
-// ---- APPLY DATA ----
 function applyData(d){
-  var tc=colorFor('temp',d.temp),   hc=colorFor('hum',d.humidity),
-      sc=colorFor('soil',d.soil),   pc=colorFor('ph',d.ph),
-      lc=colorFor('lux',d.lux),     bc=colorFor('bat',d.batPct),
+  var tc=colorFor('temp',d.temp),hc=colorFor('hum',d.humidity),
+      sc=colorFor('soil',d.soil),pc=colorFor('ph',d.ph),
+      lc=colorFor('lux',d.lux),bc=colorFor('bat',d.batPct),
       hc2=colorFor('health',d.health);
-  var circ=339.3, off=circ-(d.health/100)*circ;
+  var circ=339.3,off=circ-(d.health/100)*circ;
 
-  // Temperature
   var tv=document.getElementById('tempVal');
-  tv.textContent=d.temp; setColor(tv,tc); flash(tv);
-  document.getElementById('tempStatus').textContent=d.tempStatus; setColor(document.getElementById('tempStatus'),tc);
-  document.getElementById('tempSubStatus').textContent=d.tempStatus; setColor(document.getElementById('tempSubStatus'),tc);
+  tv.textContent=d.temp;setColor(tv,tc);flash(tv);
+  document.getElementById('tempStatus').textContent=d.tempStatus;setColor(document.getElementById('tempStatus'),tc);
+  document.getElementById('tempSubStatus').textContent=d.tempStatus;setColor(document.getElementById('tempSubStatus'),tc);
   document.getElementById('tempBar').style.cssText='width:'+Math.min((d.temp/50)*100,100)+'%;background:'+tc;
   document.getElementById('tempDot').style.background=tc;
 
-  // Humidity
   var hv=document.getElementById('humVal');
-  hv.textContent=d.humidity; setColor(hv,hc); flash(hv);
-  document.getElementById('humDelta').textContent=d.humidity+'%'; setColor(document.getElementById('humDelta'),hc);
+  hv.textContent=d.humidity;setColor(hv,hc);flash(hv);
+  document.getElementById('humDelta').textContent=d.humidity+'%';setColor(document.getElementById('humDelta'),hc);
   document.getElementById('humBar').style.cssText='width:'+d.humidity+'%;background:'+hc;
   document.getElementById('humDot').style.background=hc;
 
-  // Soil
   var sv=document.getElementById('soilVal');
-  sv.textContent=d.soil; setColor(sv,sc); flash(sv);
-  document.getElementById('soilStatus').textContent=d.soilStatus; setColor(document.getElementById('soilStatus'),sc);
-  document.getElementById('soilSubStatus').textContent=d.soilStatus; setColor(document.getElementById('soilSubStatus'),sc);
+  sv.textContent=d.soil;setColor(sv,sc);flash(sv);
+  document.getElementById('soilStatus').textContent=d.soilStatus;setColor(document.getElementById('soilStatus'),sc);
+  document.getElementById('soilSubStatus').textContent=d.soilStatus;setColor(document.getElementById('soilSubStatus'),sc);
   document.getElementById('soilBar').style.cssText='width:'+d.soil+'%;background:'+sc;
   document.getElementById('soilDot').style.background=sc;
 
-  // pH
   var pv=document.getElementById('phVal');
-  pv.textContent=parseFloat(d.ph).toFixed(2); setColor(pv,pc); flash(pv);
-  document.getElementById('phStatus').textContent=d.phStatus; setColor(document.getElementById('phStatus'),pc);
-  document.getElementById('phSubStatus').textContent=d.phStatus; setColor(document.getElementById('phSubStatus'),pc);
+  pv.textContent=parseFloat(d.ph).toFixed(2);setColor(pv,pc);flash(pv);
+  document.getElementById('phStatus').textContent=d.phStatus;setColor(document.getElementById('phStatus'),pc);
+  document.getElementById('phSubStatus').textContent=d.phStatus;setColor(document.getElementById('phSubStatus'),pc);
   document.getElementById('phBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
   document.getElementById('phDot').style.background=pc;
 
-  // Light
   var lv=document.getElementById('luxVal');
-  lv.textContent=d.lux; setColor(lv,lc); flash(lv);
+  lv.textContent=d.lux;setColor(lv,lc);flash(lv);
   var ll=luxLabel(d.lux);
-  document.getElementById('lightStatus').textContent=d.lightStatus||ll; setColor(document.getElementById('lightStatus'),lc);
-  document.getElementById('luxSubStatus').textContent=ll; setColor(document.getElementById('luxSubStatus'),lc);
+  document.getElementById('lightStatus').textContent=d.lightStatus||ll;setColor(document.getElementById('lightStatus'),lc);
+  document.getElementById('luxSubStatus').textContent=ll;setColor(document.getElementById('luxSubStatus'),lc);
   document.getElementById('luxBar').style.cssText='width:'+Math.min((d.lux/80000)*100,100)+'%;background:'+lc;
   document.getElementById('luxDot').style.background=lc;
 
-  // Battery
   var bv=document.getElementById('batPctVal');
-  bv.textContent=d.batPct; setColor(bv,bc); flash(bv);
-  document.getElementById('batStatusLabel').textContent=d.batStatus; setColor(document.getElementById('batStatusLabel'),bc);
-  document.getElementById('batVoltVal').textContent=parseFloat(d.batV).toFixed(2)+'V'; setColor(document.getElementById('batVoltVal'),bc);
+  bv.textContent=d.batPct;setColor(bv,bc);flash(bv);
+  document.getElementById('batStatusLabel').textContent=d.batStatus;setColor(document.getElementById('batStatusLabel'),bc);
+  document.getElementById('batVoltVal').textContent=parseFloat(d.batV).toFixed(2)+'V';setColor(document.getElementById('batVoltVal'),bc);
   document.getElementById('batBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('batDot').style.background=bc;
 
-  // Health ring
   var ring=document.getElementById('healthRing');
   ring.setAttribute('stroke-dashoffset',off.toFixed(1));
   ring.setAttribute('stroke',hc2);
   var hp=document.getElementById('healthPct');
-  hp.textContent=d.health+'%'; hp.setAttribute('fill',hc2);
+  hp.textContent=d.health+'%';hp.setAttribute('fill',hc2);
 
-  // Metric bars
   document.getElementById('mTempBar').style.cssText='width:'+Math.min((d.temp/50)*100,100)+'%;background:'+tc;
   document.getElementById('mTempVal').textContent=d.temp+'\u00B0C';
   document.getElementById('mHumBar').style.cssText='width:'+d.humidity+'%;background:'+hc;
@@ -697,22 +710,21 @@ function applyData(d){
   document.getElementById('mBatBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('mBatVal').textContent=d.batPct+'%';
 
-  // Alert banner — priority: soil > pH > battery
   var banner=document.getElementById('alertBanner');
   var aIcon=document.getElementById('alertIcon');
   var aMsg=document.getElementById('alertMsg');
   if(d.soil<30){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #ef4444;background:#fef2f2;color:#dc2626;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F'; aMsg.textContent='WATER YOUR PLANT NOW!';
-  } else if(d.ph<5.0||d.ph>8.5){
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='WATER YOUR PLANT NOW!';
+  }else if(d.ph<5.0||d.ph>8.5){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F'; aMsg.textContent='Soil pH out of range — check fertiliser!';
-  } else if(d.batPct<20){
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Soil pH out of range \u2014 check fertiliser!';
+  }else if(d.batPct<20){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F'; aMsg.textContent='Battery low \u2014 charge soon!';
-  } else {
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Battery low \u2014 charge soon!';
+  }else{
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u2705'; aMsg.innerHTML='Plant is healthy &amp; happy';
+    aIcon.textContent='\u2705';aMsg.innerHTML='Plant is healthy &amp; happy';
   }
 
   pushChart(d.temp,d.humidity,d.soil,d.ph,d.lux);
@@ -724,7 +736,6 @@ function applyData(d){
     String(n.getSeconds()).padStart(2,'0');
 }
 
-// ---- AJAX FETCH every 2s ----
 var fails=0;
 function fetchData(){
   fetch('/data')
@@ -732,14 +743,14 @@ function fetchData(){
     .then(function(d){
       fails=0;
       var cs=document.getElementById('connStatus');
-      cs.textContent='\u2022 Online'; cs.style.color='#22c55e';
+      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
       applyData(d);
     })
     .catch(function(){
       fails++;
       if(fails>=3){
         var cs=document.getElementById('connStatus');
-        cs.textContent='\u2022 Reconnecting...'; cs.style.color='#f59e0b';
+        cs.textContent='\u2022 Reconnecting...';cs.style.color='#f59e0b';
       }
     });
 }
@@ -749,7 +760,7 @@ setInterval(fetchData,2000);
 </body>
 </html>
 )rawliteral";
-  server.send(200,"text/html",html);
+  server.send(200, "text/html", html);
 }
 
 // ================================================================
@@ -757,7 +768,7 @@ setInterval(fetchData,2000);
 // ================================================================
 void setup() {
   Serial.begin(115200);
-  Wire.begin();        // SDA=GPIO21, SCL=GPIO22
+  Wire.begin();
 
   dht.begin();
 
@@ -772,23 +783,27 @@ void setup() {
 
   lcd.init();
   lcd.backlight();
-  lcd.setCursor(2,0); lcd.print("PlantOS  v3");
-  lcd.setCursor(3,1); lcd.print("Starting...");
+  lcd.setCursor(2, 0); lcd.print("PlantOS  v3");
+  lcd.setCursor(3, 1); lcd.print("Starting...");
   delay(2000);
   lcd.clear();
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(ap_ip, ap_ip, IPAddress(255,255,255,0));
+  WiFi.softAPConfig(ap_ip, ap_ip, IPAddress(255, 255, 255, 0));
   WiFi.softAP(ap_ssid, ap_password);
 
   Serial.println("=== PlantOS v3 ===");
-  Serial.print("SSID     : "); Serial.println(ap_ssid);
-  Serial.print("Password : "); Serial.println(ap_password);
-  Serial.print("URL      : http://"); Serial.println(ap_ip);
+  Serial.println("Soil  → GPIO34 | pH → GPIO35 | Bat → GPIO33");
+  Serial.print("Hotspot : "); Serial.println(ap_ssid);
+  Serial.print("URL     : http://"); Serial.println(ap_ip);
+  Serial.println("--- pH CALIBRATION TIP ---");
+  Serial.println("Dip probe in water, note rawV in Serial");
+  Serial.println("PH_OFFSET = 7.0 + (5.70 x rawV)");
+  Serial.println("--------------------------");
 
   lcd.clear();
-  lcd.setCursor(0,0); lcd.print("Hotspot ON!");
-  lcd.setCursor(0,1); lcd.print(ap_ip);
+  lcd.setCursor(0, 0); lcd.print("Hotspot ON!");
+  lcd.setCursor(0, 1); lcd.print(ap_ip);
   delay(3000);
   lcd.clear();
 
@@ -797,7 +812,7 @@ void setup() {
   server.begin();
   Serial.println("[OK]  Web server started");
 
-  beep(1000,100); delay(100); beep(1500,100);
+  beep(1000, 100); delay(100); beep(1500, 100);
 }
 
 // ================================================================
@@ -809,23 +824,24 @@ void loop() {
   // LCD page flip
   if (millis() - lcdMillis >= LCD_PAGE_TIME) {
     lcdMillis = millis();
-    lcdPage   = (lcdPage + 1) % 4;   // 4 pages now
+    lcdPage   = (lcdPage + 1) % 4;
     showLCDPage(lcdPage);
   }
 
-  // Sensor read
+  // Sensor read every 2 seconds
   if (millis() - previousMillis >= READ_INTERVAL) {
     previousMillis = millis();
 
-    // ---- Capacitive Soil (HIGH=dry, LOW=wet) ----
+    // ---- Capacitive Soil → GPIO34 ----
     g_soilRaw     = readAverage(SOIL_PIN);
     g_soilPercent = map(g_soilRaw, SOIL_DRY, SOIL_WET, 0, 100);
     g_soilPercent = constrain(g_soilPercent, 0, 100);
 
-    // ---- pH Sensor ----
-    int phRaw     = readAverage(PH_PIN);
-    float voltage = phRaw * (VREF / 4095.0);
-    g_pH          = constrain(PH_SLOPE * voltage + PH_OFFSET, 0.0, 14.0);
+    // ---- pH Sensor → GPIO35 ----
+    int   phRaw     = readAverage(PH_PIN);
+    float phVoltage = phRaw * (VREF / 4095.0);
+    g_pH            = PH_SLOPE * phVoltage + PH_OFFSET;
+    g_pH            = constrain(g_pH, 0.0, 14.0);
 
     // ---- BH1750 Light ----
     if (lightMeter.measurementReady()) {
@@ -865,23 +881,47 @@ void loop() {
     else if (g_lux < 50000) g_lightStatus = "Bright";
     else                     g_lightStatus = "Intense";
 
-    // ---- Alerts ----
+    // ================================================================
+    //  ALERTS WITH COOLDOWN — no buzzer spam
+    // ================================================================
+
+    // Dry soil — LED on + beep max once per 30 sec
     if (g_soilPercent < 30) {
       digitalWrite(LED_PIN, HIGH);
-      dryAlert();
+      if (millis() - lastDryAlertTime >= DRY_ALERT_INTERVAL) {
+        dryAlert();
+        lastDryAlertTime = millis();
+      }
     } else {
       digitalWrite(LED_PIN, LOW);
     }
 
-    if (g_pH < 5.0 || g_pH > 8.5) phAlert();
+    // pH out of range — beep max once per 60 sec
+    if (g_pH < 5.0 || g_pH > 8.5) {
+      if (millis() - lastPhAlertTime >= PH_ALERT_INTERVAL) {
+        phAlert();
+        lastPhAlertTime = millis();
+      }
+    }
 
-    if (g_batPercent < 15) batAlert();
+    // Battery critical — beep max once per 2 min
+    if (g_batPercent < 15) {
+      if (millis() - lastBatAlertTime >= BAT_ALERT_INTERVAL) {
+        batAlert();
+        lastBatAlertTime = millis();
+      }
+    }
 
     showLCDPage(lcdPage);
 
+    // Serial debug — use rawV to recalibrate pH offset
     Serial.printf(
-      "T:%.1fC | H:%.1f%% | Soil:%d%% | pH:%.2f | Lux:%.0flx | Bat:%.2fV(%d%%)\n",
-      g_temp, g_humidity, g_soilPercent, g_pH, g_lux, g_batVoltage, g_batPercent
+      "Soil:%d%% raw:%d | pH:%.2f rawV:%.3fV | T:%.1fC H:%.1f%% | Lux:%.0f | Bat:%.2fV %d%%\n",
+      g_soilPercent, g_soilRaw,
+      g_pH, phVoltage,
+      g_temp, g_humidity,
+      g_lux,
+      g_batVoltage, g_batPercent
     );
   }
 }
