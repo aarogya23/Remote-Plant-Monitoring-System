@@ -31,7 +31,7 @@
 #include <DHT.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <BH1750.h>
+#include <HTTPClient.h>
 #include <WiFi.h>
 #include <WebServer.h>
 
@@ -41,6 +41,16 @@
 const char* ap_ssid     = "PlantOS";
 const char* ap_password = "plant1234";
 IPAddress   ap_ip(192, 168, 4, 1);
+
+// ================================================================
+//  WIFI + SPRING BOOT CONFIG (EDIT THESE)
+// ================================================================
+const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+// Spring Boot endpoint that receives sensor JSON:
+// Example: http://192.168.1.10:8080/api/data
+const char* SPRING_POST_URL = "http://192.168.1.10:8080/api/data";
 
 // ================================================================
 //  PIN DEFINITIONS
@@ -58,7 +68,6 @@ IPAddress   ap_ip(192, 168, 4, 1);
 // ================================================================
 DHT               dht(DHT_PIN, DHT_TYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-BH1750            lightMeter;
 WebServer         server(80);
 
 // ================================================================
@@ -95,6 +104,7 @@ float  g_temp = 0, g_humidity = 0, g_lux = 0, g_pH = 0;
 int    g_soilPercent = 0, g_soilRaw = 0;
 float  g_batVoltage  = 0;
 int    g_batPercent  = 0;
+const bool HAS_LIGHT_SENSOR = false; // BH1750 removed for now
 
 String g_soilStatus  = "---";
 String g_tempStatus  = "---";
@@ -232,13 +242,54 @@ int calcHealth() {
   if      (g_humidity < 20 || g_humidity > 90) score -= 20;
   else if (g_humidity < 30 || g_humidity > 80) score -=  8;
 
-  if      (g_lux <  100)  score -= 20;
-  else if (g_lux <  500)  score -= 10;
-  else if (g_lux > 80000) score -= 10;
+  if (HAS_LIGHT_SENSOR) {
+    if      (g_lux <  100)  score -= 20;
+    else if (g_lux <  500)  score -= 10;
+    else if (g_lux > 80000) score -= 10;
+  }
 
   if (g_batPercent < 10) score -= 15;
 
   return constrain(score, 0, 100);
+}
+
+String buildSensorJson() {
+  int health = calcHealth();
+  String j = "{";
+  j += "\"temp\":"          + String(g_temp, 1)       + ",";
+  j += "\"humidity\":"      + String(g_humidity, 1)   + ",";
+  j += "\"soil\":"          + String(g_soilPercent)   + ",";
+  j += "\"ph\":"            + String(g_pH, 2)         + ",";
+  j += "\"lux\":"           + String((int)g_lux)      + ",";
+  j += "\"batV\":"          + String(g_batVoltage, 2) + ",";
+  j += "\"batPct\":"        + String(g_batPercent)    + ",";
+  j += "\"health\":"        + String(health)          + ",";
+  j += "\"soilStatus\":\""  + g_soilStatus            + "\",";
+  j += "\"phStatus\":\""    + g_phStatus              + "\",";
+  j += "\"tempStatus\":\""  + g_tempStatus            + "\",";
+  j += "\"lightStatus\":\"" + g_lightStatus           + "\",";
+  j += "\"batStatus\":\""   + g_batStatus             + "\"";
+  j += "}";
+  return j;
+}
+
+void postToSpring() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  http.setReuse(true);
+  http.begin(SPRING_POST_URL);
+  http.addHeader("Content-Type", "application/json");
+
+  String payload = buildSensorJson();
+  int code = http.POST(payload);
+  if (code > 0) {
+    Serial.printf("[OK] POST /api/data -> HTTP %d\n", code);
+  } else {
+    Serial.printf("[WARN] POST /api/data failed (err=%d)\n", code);
+  }
+
+  http.end();
 }
 
 // ================================================================
@@ -772,12 +823,6 @@ void setup() {
 
   dht.begin();
 
-  if (!lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
-    Serial.println("[WARN] BH1750 not found — check wiring!");
-  } else {
-    Serial.println("[OK]  BH1750 ready");
-  }
-
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_PIN,    OUTPUT);
 
@@ -788,14 +833,32 @@ void setup() {
   delay(2000);
   lcd.clear();
 
-  WiFi.mode(WIFI_AP);
+  // Run both: keep the existing hotspot + connect to your normal Wi-Fi for Spring Boot uploads.
+  WiFi.mode(WIFI_AP_STA);
   WiFi.softAPConfig(ap_ip, ap_ip, IPAddress(255, 255, 255, 0));
   WiFi.softAP(ap_ssid, ap_password);
+
+  Serial.print("Connecting WiFi (STA): ");
+  Serial.println(WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  unsigned long staStart = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - staStart < 15000) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("[OK] WiFi connected. IP = ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("[WARN] WiFi STA connect failed (will keep retrying on next POST)");
+  }
 
   Serial.println("=== PlantOS v3 ===");
   Serial.println("Soil  → GPIO34 | pH → GPIO35 | Bat → GPIO33");
   Serial.print("Hotspot : "); Serial.println(ap_ssid);
   Serial.print("URL     : http://"); Serial.println(ap_ip);
+  Serial.print("Spring   : "); Serial.println(SPRING_POST_URL);
   Serial.println("--- pH CALIBRATION TIP ---");
   Serial.println("Dip probe in water, note rawV in Serial");
   Serial.println("PH_OFFSET = 7.0 + (5.70 x rawV)");
@@ -843,10 +906,8 @@ void loop() {
     g_pH            = PH_SLOPE * phVoltage + PH_OFFSET;
     g_pH            = constrain(g_pH, 0.0, 14.0);
 
-    // ---- BH1750 Light ----
-    if (lightMeter.measurementReady()) {
-      g_lux = lightMeter.readLightLevel();
-    }
+    // ---- Light sensor (BH1750 removed for now) ----
+    g_lux = 0;
 
     // ---- DHT22 ----
     float h = dht.readHumidity();
@@ -875,11 +936,7 @@ void loop() {
     else if (g_temp < 35) g_tempStatus = "Normal";
     else                   g_tempStatus = "Hot";
 
-    if      (g_lux <  100)  g_lightStatus = "VeryDark";
-    else if (g_lux <  500)  g_lightStatus = "Dim";
-    else if (g_lux < 2000)  g_lightStatus = "Indoor";
-    else if (g_lux < 50000) g_lightStatus = "Bright";
-    else                     g_lightStatus = "Intense";
+    g_lightStatus = "N/A";
 
     // ================================================================
     //  ALERTS WITH COOLDOWN — no buzzer spam
@@ -923,5 +980,8 @@ void loop() {
       g_lux,
       g_batVoltage, g_batPercent
     );
+
+    // Push reading to Spring Boot
+    postToSpring();
   }
 }

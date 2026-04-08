@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlantOS Dashboard</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 18px; background: #f6f7fb; color: #111; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .card { background: #fff; border: 1px solid #e6e8ef; border-radius: 12px; padding: 12px 14px; min-width: 170px; }
+    .k { font-size: 12px; color: #667085; margin-bottom: 6px; }
+    .v { font-size: 20px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { border: 1px solid #e6e8ef; padding: 8px 10px; font-size: 12.5px; }
+    th { background: #f1f4ff; text-align: left; }
+    caption { caption-side: top; text-align: left; font-weight: 700; margin: 16px 0 10px; }
+    .muted { color: #667085; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>PlantOS Dashboard</h1>
+  <div class="muted">ESP32 sends sensor readings to Spring Boot. Page refreshes automatically.</div>
+
+  <div class="row" id="latestRow">
+    <div class="card"><div class="k">Temp (C)</div><div class="v" id="temp">--</div></div>
+    <div class="card"><div class="k">Humidity (%)</div><div class="v" id="humidity">--</div></div>
+    <div class="card"><div class="k">Soil (%)</div><div class="v" id="soil">--</div></div>
+    <div class="card"><div class="k">pH</div><div class="v" id="ph">--</div></div>
+    <div class="card"><div class="k">Lux (lx)</div><div class="v" id="lux">--</div></div>
+    <div class="card"><div class="k">Battery (V)</div><div class="v" id="batV">--</div></div>
+    <div class="card"><div class="k">Battery (%)</div><div class="v" id="batPct">--</div></div>
+    <div class="card"><div class="k">Health</div><div class="v" id="health">--</div></div>
+  </div>
+
+  <table>
+    <caption>History (latest first)</caption>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Temp</th>
+        <th>Humidity</th>
+        <th>Soil</th>
+        <th>pH</th>
+        <th>Lux</th>
+        <th>Bat V</th>
+        <th>Bat %</th>
+        <th>Health</th>
+      </tr>
+    </thead>
+    <tbody id="historyBody">
+      <tr><td colspan="9" class="muted">Waiting for data...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const els = {
+      temp: document.getElementById('temp'),
+      humidity: document.getElementById('humidity'),
+      soil: document.getElementById('soil'),
+      ph: document.getElementById('ph'),
+      lux: document.getElementById('lux'),
+      batV: document.getElementById('batV'),
+      batPct: document.getElementById('batPct'),
+      health: document.getElementById('health'),
+    };
+
+    function formatTS(ts) {
+      try {
+        const d = new Date(ts);
+        return d.toLocaleString();
+      } catch (e) {
+        return ts;
+      }
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    }
+
+    async function refreshLatest() {
+      try {
+        const r = await fetchJson('/api/latest');
+        els.temp.textContent = Number(r.temp).toFixed(1);
+        els.humidity.textContent = Number(r.humidity).toFixed(1);
+        els.soil.textContent = String(r.soil);
+        els.ph.textContent = Number(r.ph).toFixed(2);
+        els.lux.textContent = String(Math.round(r.lux));
+        els.batV.textContent = Number(r.batV).toFixed(2);
+        els.batPct.textContent = String(r.batPct);
+        els.health.textContent = String(r.health);
+      } catch (e) {
+        // If noContent (204) happens before first reading, keep placeholders.
+      }
+    }
+
+    async function refreshHistory() {
+      try {
+        const list = await fetchJson('/api/history?limit=40');
+        const body = document.getElementById('historyBody');
+        body.innerHTML = '';
+        for (const r of list) {
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td>' + formatTS(r.ts) + '</td>' +
+            '<td>' + Number(r.temp).toFixed(1) + '</td>' +
+            '<td>' + Number(r.humidity).toFixed(1) + '</td>' +
+            '<td>' + r.soil + '</td>' +
+            '<td>' + Number(r.ph).toFixed(2) + '</td>' +
+            '<td>' + Math.round(r.lux) + '</td>' +
+            '<td>' + Number(r.batV).toFixed(2) + '</td>' +
+            '<td>' + r.batPct + '</td>' +
+            '<td>' + r.health + '</td>';
+          body.appendChild(tr);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    refreshLatest();
+    refreshHistory();
+    setInterval(() => {
+      refreshLatest();
+      refreshHistory();
+    }, 2000);
+  </script>
+</body>
+</html>
+
