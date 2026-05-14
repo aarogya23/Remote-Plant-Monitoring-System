@@ -31,19 +31,18 @@
 #include <DHT.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include "BluetoothSerial.h"
-
-// Check if Bluetooth configurations are enabled in the compiler
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
-#endif
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 // ================================================================
-//  BLUETOOTH CONFIG (EDIT THIS)
+//  WIFI & SERVER CONFIG (EDIT THIS)
 // ================================================================
 
-// This is the name that will appear when you scan for Bluetooth devices on your PC
-const char* BLUETOOTH_NAME = "PlantOS-ESP32";
+const char* WIFI_SSID     = "Redmi 13";
+const char* WIFI_PASSWORD = "12345678";
+
+// Make sure to use your actual local IP address where Spring Boot is running
+const char* SERVER_URL    = "http://10.21.19.184:8080/api/data";
 
 // ================================================================
 //  PIN DEFINITIONS
@@ -61,7 +60,6 @@ const char* BLUETOOTH_NAME = "PlantOS-ESP32";
 // ================================================================
 DHT               dht(DHT_PIN, DHT_TYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-BluetoothSerial SerialBT;
 
 // ================================================================
 //  CALIBRATION & CONSTANTS
@@ -209,9 +207,9 @@ void showLCDPage(byte page) {
       break;
     case 3:
       lcd.setCursor(0, 0);
-      lcd.print("Bluetooth SPP   ");
+      lcd.print("WiFi Mode       ");
       lcd.setCursor(0, 1);
-      lcd.print("PlantOS-ESP32   ");
+      lcd.print(WiFi.localIP().toString() + "  ");
       break;
   }
 }
@@ -266,11 +264,26 @@ String buildSensorJson() {
   return j;
 }
 
-void sendViaBluetooth() {
-  String payload = buildSensorJson();
-  
-  // Send via Bluetooth
-  SerialBT.println(payload);
+void sendViaWiFi() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String payload = buildSensorJson();
+    
+    http.begin(SERVER_URL);
+    http.addHeader("Content-Type", "application/json");
+    
+    int httpResponseCode = http.POST(payload);
+    
+    if (httpResponseCode > 0) {
+      Serial.printf("[HTTP] POST... code: %d\n", httpResponseCode);
+    } else {
+      Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+    }
+    http.end();
+  } else {
+    Serial.println("[WIFI] Disconnected. Reconnecting...");
+    WiFi.reconnect();
+  }
 }
 
 // HTML and JSON Web Endpoints removed
@@ -294,26 +307,36 @@ void setup() {
   delay(2000);
   lcd.clear();
 
-  SerialBT.begin(BLUETOOTH_NAME);
-  Serial.print("Bluetooth started! Pair with '");
-  Serial.print(BLUETOOTH_NAME);
-  Serial.println("'");
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(WIFI_SSID);
+  
+  lcd.clear();
+  lcd.setCursor(0, 0); lcd.print("Connecting WiFi ");
+  lcd.setCursor(0, 1); lcd.print(WIFI_SSID);
+  
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
-  Serial.println("=== PlantOS v3 ===");
+  Serial.println("\n=== PlantOS v3 ===");
   Serial.println("Soil  → GPIO34 | pH → GPIO35 | Bat → GPIO33");
-  Serial.println("Mode    : Bluetooth Serial (SPP)");
+  Serial.print("Mode    : Wi-Fi Connected. IP: ");
+  Serial.println(WiFi.localIP());
   Serial.println("--- pH CALIBRATION TIP ---");
   Serial.println("Dip probe in water, note rawV in Serial");
   Serial.println("PH_OFFSET = 7.0 + (5.70 x rawV)");
   Serial.println("--------------------------");
 
   lcd.clear();
-  lcd.setCursor(0, 0); lcd.print("Bluetooth Ready!");
-  lcd.setCursor(0, 1); lcd.print("Pair to PC      ");
+  lcd.setCursor(0, 0); lcd.print("WiFi Connected! ");
+  lcd.setCursor(0, 1); lcd.print(WiFi.localIP().toString());
   delay(3000);
   lcd.clear();
 
-  Serial.println("[OK]  Device ready (No local web server)");
+  Serial.println("[OK]  Device ready. Sending data to Spring Boot.");
 
   beep(1000, 100); delay(100); beep(1500, 100);
 }
@@ -421,7 +444,7 @@ void loop() {
       g_batVoltage, g_batPercent
     );
 
-    // Send reading via Bluetooth
-    sendViaBluetooth();
+    // Send reading via Wi-Fi to REST API
+    sendViaWiFi();
   }
 }
