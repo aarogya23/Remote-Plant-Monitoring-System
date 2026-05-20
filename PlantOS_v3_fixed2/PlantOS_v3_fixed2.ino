@@ -19,14 +19,14 @@
 //
 //  PIN ASSIGNMENTS:
 //  SOIL_PIN → GPIO34  (ADC1_CH6, input-only)
-//  PH_PIN   → GPIO35  (ADC1_CH7, input-only)
+//  PH_PIN   → GPIO35  (ADC1_CH7, input-only)+-
 //  BAT_PIN  → GPIO33  (ADC1_CH5)
 //  DHT_PIN  → GPIO4
 //  BUZZER   → GPIO19
 //  LED      → GPIO18
 //  BH1750   → SDA=GPIO21, SCL=GPIO22  (I2C 0x23)
 //  LCD      → SDA=GPIO21, SCL=GPIO22  (I2C 0x27)
-// ================================================================
+// =============================================================
 
 #include <DHT.h>
 #include <Wire.h>
@@ -38,11 +38,11 @@
 //  WIFI & SERVER CONFIG (EDIT THIS)
 // ================================================================
 
-const char* WIFI_SSID     = "Redmi 13";
-const char* WIFI_PASSWORD = "12345678";
+const char* WIFI_SSID     = "Chitchat";
+const char* WIFI_PASSWORD = "blablabla";
 
 // Make sure to use your actual local IP address where Spring Boot is running
-const char* SERVER_URL    = "http://10.21.19.184:8080/api/data";
+const char* SERVER_URL    = "http://10.173.109.54:8080/api/data";
 
 // ================================================================
 //  PIN DEFINITIONS

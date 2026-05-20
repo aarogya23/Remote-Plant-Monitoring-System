@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PlantOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f4f6f9;--card:#fff;--border:#e8ecf0;--text:#1a2332;--muted:#7a8694;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:10}
+.logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-name{font-weight:700;font-size:17px;letter-spacing:-.3px}
+.nav-section{padding:20px 12px 8px}
+.nav-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-item:hover{background:#f1f5f9;color:var(--text)}
+.nav-item.active{background:#f0fdf4;color:#16a34a;font-weight:600}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.device-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)}
+.device-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px #dcfce7;flex-shrink:0}
+.device-name{font-size:12px;font-weight:600}
+.device-status{font-size:11px;color:#22c55e;font-weight:500}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+.topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
+.topbar-title p{font-size:12px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:12px;font-weight:600;color:#16a34a}
+.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.time-display{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--muted);background:#f8fafc;padding:5px 12px;border-radius:8px;border:1px solid var(--border)}
+.content{padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+.wifi-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;font-size:12px;color:#1d4ed8;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.alert-banner{padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;transition:all .4s}
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:var(--card);border-radius:14px;padding:18px 20px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-icon{width:40px;height:40px;border-radius:11px;background:#f8fafc;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px}
+.card-delta{font-size:11.5px;font-weight:700;font-family:var(--mono);transition:color .3s}
+.card-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px}
+.card-value{font-size:34px;font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;transition:color .3s}
+.card-unit{font-size:15px;font-weight:500;color:var(--muted);margin-left:2px}
+.card-sub{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600}
+.card-bar-track{height:5px;background:#f1f5f9;border-radius:10px;margin-top:10px;overflow:hidden}
+.card-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .3s}
+.bottom-row{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.chart-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.chart-title{font-size:15px;font-weight:700}
+.chart-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.chart-area{width:100%;height:220px;margin-top:16px}
+.sparkline{width:100%;height:100%}
+.legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+.health-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.health-title{font-size:15px;font-weight:700}
+.health-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.health-ring-wrap{display:flex;justify-content:center;margin:14px 0}
+.health-metrics{display:flex;flex-direction:column;gap:9px}
+.metric-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.metric-icon{font-size:13px;width:18px;text-align:center}
+.metric-name{flex:1;font-weight:500;color:var(--muted)}
+.metric-val{font-family:var(--mono);font-size:12px;font-weight:600;transition:color .3s}
+.metric-bar{width:72px;height:4px;background:#f1f5f9;border-radius:10px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
+.ip-footer{text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding-bottom:8px}
+.pin-info{background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px 16px;font-size:12px;color:#92400e;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+@keyframes flashUpdate{0%{opacity:1}30%{opacity:.4}100%{opacity:1}}
+.updated{animation:flashUpdate .4s ease}
+@media(max-width:960px){
+  .sidebar{display:none}.main{margin-left:0}
+  .cards-grid{grid-template-columns:repeat(2,1fr)}
+  .bottom-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">&#127807;</div>
+    <span class="logo-name">PlantOS</span>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Main</div>
+    <a class="nav-item active" id="navDashboard" href="javascript:void(0)" onclick="switchView('dashboard')"><span class="nav-icon">&#9783;</span> Dashboard</a>
+    <a class="nav-item" id="navReports" href="javascript:void(0)" onclick="switchView('reports')"><span class="nav-icon">&#128200;</span> Reports</a>
+    <a class="nav-item" href="#"><span class="nav-icon">&#128276;</span> Alerts</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Settings</div>
+    <a class="nav-item" href="#"><span class="nav-icon">&#9881;</span> Config</a>
+    <a class="nav-item" href="#"><span class="nav-icon">&#128268;</span> Device</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="device-chip">
+      <div class="device-dot"></div>
+      <div>
+        <div class="device-name">ESP32-AGRO</div>
+        <div class="device-status" id="connStatus">&#8226; Online</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h2>Plant Dashboard</h2>
+      <p id="lastRead">Last reading: --:--:--</p>
+    </div>
+    <div class="topbar-right">
+      <button onclick="generateTestData()" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-right:10px">Test Data</button>
+      <div class="time-display" id="clockDisp">--:--:--</div>
+      <div class="live-badge"><div class="live-dot"></div> Live</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Dashboard View -->
+    <div id="dashboardView" style="display:block">
+      <div class="wifi-info">
+        &#128225; Hotspot: <strong>PlantOS</strong> &nbsp;|&nbsp; Password: <strong>plant1234</strong> &nbsp;|&nbsp; Open: <strong>http://192.168.4.1</strong>
+      </div>
+
+      <div class="pin-info">
+        &#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4
+      </div>
+
+      <div class="alert-banner" id="alertBanner">
+        <span style="font-size:18px" id="alertIcon">&#127807;</span>
+        <span id="alertMsg">Plant is healthy &amp; happy</span>
+      </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#127777;</div>
+          <span class="card-delta" id="tempStatus">Normal</span>
+        </div>
+        <div class="card-label">Temperature (DHT22)</div>
+        <div><span class="card-value" id="tempVal">--</span><span class="card-unit">&deg;C</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="tempBar" style="width:0%;background:#22c55e"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="tempDot" style="background:#22c55e"></div>
+          <span id="tempSubStatus" style="color:#22c55e">Normal</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 15&#8211;35&#176;C</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#128167;</div>
+          <span class="card-delta" id="humDelta" style="color:#3b82f6">--%</span>
+        </div>
+        <div class="card-label">Humidity (DHT22)</div>
+        <div><span class="card-value" id="humVal" style="color:#3b82f6">--</span><span class="card-unit">%</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="humBar" style="width:0%;background:#3b82f6"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="humDot" style="background:#3b82f6"></div>
+          <span style="color:var(--muted);font-weight:400">Optimal 40&#8211;70%</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#127807;</div>
+          <span class="card-delta" id="soilStatus">Moist</span>
+        </div>
+        <div class="card-label">Soil Moisture (GPIO34)</div>
+        <div><span class="card-value" id="soilVal">--</span><span class="card-unit">%</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="soilBar" style="width:0%;background:#22c55e"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="soilDot" style="background:#22c55e"></div>
+          <span id="soilSubStatus" style="color:#22c55e">Moist</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 35&#8211;65%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#9878;</div>
+          <span class="card-delta" id="phStatus" style="color:#22c55e">Neutral</span>
+        </div>
+        <div class="card-label">Soil pH (GPIO35)</div>
+        <div><span class="card-value" id="phVal" style="color:#22c55e">--</span><span class="card-unit">pH</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="phBar" style="width:0%;background:#22c55e"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="phDot" style="background:#22c55e"></div>
+          <span id="phSubStatus" style="color:#22c55e">Neutral</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 5.5&#8211;7.5</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#9728;</div>
+          <span class="card-delta" id="lightStatus" style="color:#f59e0b">--</span>
+        </div>
+        <div class="card-label">Light (BH1750)</div>
+        <div><span class="card-value" id="luxVal" style="color:#f59e0b">--</span><span class="card-unit">lx</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="luxBar" style="width:0%;background:#f59e0b"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="luxDot" style="background:#f59e0b"></div>
+          <span id="luxSubStatus" style="color:#f59e0b">--</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;500&#8211;20k lx ideal</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#128267;</div>
+          <span class="card-delta" id="batStatusLabel" style="color:#22c55e">Good</span>
+        </div>
+        <div class="card-label">Battery (2S 18650)</div>
+        <div><span class="card-value" id="batPctVal">--</span><span class="card-unit">%</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="batBar" style="width:0%;background:#22c55e"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="batDot" style="background:#22c55e"></div>
+          <span id="batVoltVal" style="color:#22c55e;font-family:var(--mono)">--V</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;7.4V nominal</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="chart-card">
+        <div class="chart-title">Sensor History</div>
+        <div class="chart-sub">Live rolling window &#8212; last 40 readings</div>
+        <div class="chart-area">
+          <svg class="sparkline" id="sparkSVG" viewBox="0 0 600 200" preserveAspectRatio="none">
+            <line x1="0" y1="40"  x2="600" y2="40"  stroke="#f1f5f9" stroke-width="1"/>
+            <line x1="0" y1="80"  x2="600" y2="80"  stroke="#f1f5f9" stroke-width="1"/>
+            <line x1="0" y1="120" x2="600" y2="120" stroke="#f1f5f9" stroke-width="1"/>
+            <line x1="0" y1="160" x2="600" y2="160" stroke="#f1f5f9" stroke-width="1"/>
+            <polyline id="tempLine" fill="none" stroke="#ef4444" stroke-width="2"   stroke-linejoin="round"/>
+            <polyline id="humLine"  fill="none" stroke="#3b82f6" stroke-width="2"   stroke-linejoin="round"/>
+            <polyline id="soilLine" fill="none" stroke="#22c55e" stroke-width="2"   stroke-linejoin="round"/>
+            <polyline id="phLine"   fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="5 2"/>
+            <polyline id="luxLine"  fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="3 2"/>
+          </svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Temp (&#176;C)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Humidity (%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Soil (%)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> pH</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Light (klx)</div>
+        </div>
+      </div>
+
+      <div class="health-card">
+        <div class="health-title">Plant Health</div>
+        <div class="health-sub">Composite score &#8212; all 6 sensors</div>
+        <div class="health-ring-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="54" fill="none" stroke="#f1f5f9" stroke-width="11"/>
+            <circle cx="75" cy="75" r="54" id="healthRing"
+              fill="none" stroke="#22c55e" stroke-width="11"
+              stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"
+              transform="rotate(-90 75 75)"
+              style="transition:stroke-dashoffset .8s ease,stroke .4s"/>
+            <text x="75" y="69" text-anchor="middle"
+              font-family="'DM Mono',monospace" font-size="26" font-weight="700"
+              id="healthPct" fill="#22c55e">--%</text>
+            <text x="75" y="88" text-anchor="middle"
+              font-family="'DM Sans',sans-serif" font-size="11" font-weight="500"
+              fill="#94a3b8">HEALTH</text>
+          </svg>
+        </div>
+        <div class="health-metrics">
+          <div class="metric-row">
+            <span class="metric-icon">&#127777;</span>
+            <span class="metric-name">Temp</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mTempBar" style="width:0%;background:#ef4444"></div></div>
+            <span class="metric-val" id="mTempVal">--&#176;C</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-icon">&#128167;</span>
+            <span class="metric-name">Humidity</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mHumBar" style="width:0%;background:#3b82f6"></div></div>
+            <span class="metric-val" id="mHumVal">--%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-icon">&#127807;</span>
+            <span class="metric-name">Soil</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mSoilBar" style="width:0%;background:#22c55e"></div></div>
+            <span class="metric-val" id="mSoilVal">--%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-icon">&#9878;</span>
+            <span class="metric-name">pH</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mPhBar" style="width:0%;background:#8b5cf6"></div></div>
+            <span class="metric-val" id="mPhVal">--</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-icon">&#9728;</span>
+            <span class="metric-name">Light</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mLuxBar" style="width:0%;background:#f59e0b"></div></div>
+            <span class="metric-val" id="mLuxVal">-- lx</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-icon">&#128267;</span>
+            <span class="metric-name">Battery</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mBatBar" style="width:0%;background:#22c55e"></div></div>
+            <span class="metric-val" id="mBatVal">--%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Section -->
+    <div id="reportsView" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:22px;font-weight:700;margin-bottom:8px">Data Reports</h2>
+          <p style="font-size:12px;color:var(--muted)">View historical data and analytics</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="setReportPeriod('today')" id="btnToday" class="report-period-btn" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Today</button>
+          <button onclick="setReportPeriod('week')" id="btnWeek" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Weekly</button>
+          <button onclick="setReportPeriod('month')" id="btnMonth" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Monthly</button>
+          <button onclick="setReportPeriod('all')" id="btnAll" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">All Data</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <button onclick="exportReport('csv')" style="padding:6px 14px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📥 Export CSV</button>
+        <button onclick="exportReport('json')" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📥 Export JSON</button>
+        <button onclick="printReport()" style="padding:6px 14px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Print</button>
+      </div>
+
+      <!-- Report Statistics -->
+      <div class="cards-grid" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-label">Average Temperature</div>
+          <div><span class="card-value" id="reportAvgTemp">--</span><span class="card-unit">&deg;C</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average Humidity</div>
+          <div><span class="card-value" id="reportAvgHum" style="color:#3b82f6">--</span><span class="card-unit">%</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average Soil Moisture</div>
+          <div><span class="card-value" id="reportAvgSoil" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average pH</div>
+          <div><span class="card-value" id="reportAvgPH" style="color:#22c55e">--</span><span class="card-unit">pH</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average Light</div>
+          <div><span class="card-value" id="reportAvgLux" style="color:#f59e0b">--</span><span class="card-unit">lx</span></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Average Battery</div>
+          <div><span class="card-value" id="reportAvgBat" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="chart-card">
+        <div class="chart-title">Historical Data</div>
+        <div style="overflow-x:auto;margin-top:16px">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="padding:10px;text-align:left;font-weight:600;color:var(--muted)">Timestamp</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Temp (°C)</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Humidity (%)</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Soil (%)</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">pH</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Light (lx)</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Battery (%)</th>
+                <th style="padding:10px;text-align:center;font-weight:600;color:var(--muted)">Status</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody">
+              <tr style="border-bottom:1px solid var(--border)">
+                <td colspan="8" style="padding:20px;text-align:center;color:var(--muted)">No data available</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Report Pagination -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:16px">
+        <button onclick="prevPage()" style="padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600">← Prev</button>
+        <span id="pageInfo" style="font-size:12px;color:var(--muted);min-width:80px;text-align:center">Page --</span>
+        <button onclick="nextPage()" style="padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600">Next →</button>
+        <select id="pageSize" onchange="changePageSize()" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);cursor:pointer">
+          <option value="10">10 per page</option>
+          <option value="20">20 per page</option>
+          <option value="50">50 per page</option>
+          <option value="100">100 per page</option>
+        </select>
+      </div>
+    </div>
+    </div>
+
+    <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; PlantOS v3 &nbsp;|&nbsp; http://</div>
+
+  </div>
+</div>
+
+
+<script>
+function colorFor(type,val){
+  if(type==='temp')   return (val<15||val>35)?'#ef4444':'#22c55e';
+  if(type==='hum')    return (val<30||val>80)?'#f59e0b':'#3b82f6';
+  if(type==='soil')   return val<30?'#ef4444':val<40?'#f59e0b':'#22c55e';
+  if(type==='ph')     return (val<5.0||val>8.0)?'#ef4444':(val<5.5||val>7.5)?'#f59e0b':'#22c55e';
+  if(type==='lux')    return val<100?'#ef4444':val<500?'#f59e0b':'#22c55e';
+  if(type==='bat')    return val<30?'#ef4444':val<70?'#f59e0b':'#22c55e';
+  if(type==='health') return val>=75?'#22c55e':val>=50?'#f59e0b':'#ef4444';
+  return '#22c55e';
+}
+function luxLabel(v){
+  if(v<100)   return 'Very dark';
+  if(v<500)   return 'Dim';
+  if(v<2000)  return 'Indoor';
+  if(v<10000) return 'Bright';
+  if(v<50000) return 'Sunny';
+  return 'Intense';
+}
+function setColor(el,c){el.style.color=c;}
+function flash(el){el.classList.remove('updated');void el.offsetWidth;el.classList.add('updated');}
+
+function updateClock(){
+  var n=new Date();
+  document.getElementById('clockDisp').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+updateClock(); setInterval(updateClock,1000);
+
+var MAX=40,tD=[],hD=[],sD=[],pD=[],lD=[];
+for(var i=0;i<MAX;i++){tD.push(0);hD.push(0);sD.push(0);pD.push(7);lD.push(0);}
+
+function pts(data,lo,hi){
+  var s='';
+  for(var i=0;i<data.length;i++){
+    var x=(i/(MAX-1))*600;
+    var y=200-((data[i]-lo)/(hi-lo))*200;
+    y=Math.max(2,Math.min(198,y));
+    s+=x.toFixed(1)+','+y.toFixed(1)+' ';
+  }
+  return s.trim();
+}
+function pushChart(t,h,s,ph,lux){
+  tD.push(t);hD.push(h);sD.push(s);pD.push(ph);lD.push(lux/1000);
+  if(tD.length>MAX){tD.shift();hD.shift();sD.shift();pD.shift();lD.shift();}
+  document.getElementById('tempLine').setAttribute('points',pts(tD,0,60));
+  document.getElementById('humLine').setAttribute('points',pts(hD,0,100));
+  document.getElementById('soilLine').setAttribute('points',pts(sD,0,100));
+  document.getElementById('phLine').setAttribute('points',pts(pD,0,14));
+  document.getElementById('luxLine').setAttribute('points',pts(lD,0,80));
+}
+
+function applyData(d){
+  var tc=colorFor('temp',d.temp),hc=colorFor('hum',d.humidity),
+      sc=colorFor('soil',d.soil),pc=colorFor('ph',d.ph),
+      lc=colorFor('lux',d.lux),bc=colorFor('bat',d.batPct),
+      hc2=colorFor('health',d.health);
+  var circ=339.3,off=circ-(d.health/100)*circ;
+
+  var tv=document.getElementById('tempVal');
+  tv.textContent=d.temp;setColor(tv,tc);flash(tv);
+  document.getElementById('tempStatus').textContent=d.tempStatus;setColor(document.getElementById('tempStatus'),tc);
+  document.getElementById('tempSubStatus').textContent=d.tempStatus;setColor(document.getElementById('tempSubStatus'),tc);
+  document.getElementById('tempBar').style.cssText='width:'+Math.min((d.temp/50)*100,100)+'%;background:'+tc;
+  document.getElementById('tempDot').style.background=tc;
+
+  var hv=document.getElementById('humVal');
+  hv.textContent=d.humidity;setColor(hv,hc);flash(hv);
+  document.getElementById('humDelta').textContent=d.humidity+'%';setColor(document.getElementById('humDelta'),hc);
+  document.getElementById('humBar').style.cssText='width:'+d.humidity+'%;background:'+hc;
+  document.getElementById('humDot').style.background=hc;
+
+  var sv=document.getElementById('soilVal');
+  sv.textContent=d.soil;setColor(sv,sc);flash(sv);
+  document.getElementById('soilStatus').textContent=d.soilStatus;setColor(document.getElementById('soilStatus'),sc);
+  document.getElementById('soilSubStatus').textContent=d.soilStatus;setColor(document.getElementById('soilSubStatus'),sc);
+  document.getElementById('soilBar').style.cssText='width:'+d.soil+'%;background:'+sc;
+  document.getElementById('soilDot').style.background=sc;
+
+  var pv=document.getElementById('phVal');
+  pv.textContent=parseFloat(d.ph).toFixed(2);setColor(pv,pc);flash(pv);
+  document.getElementById('phStatus').textContent=d.phStatus;setColor(document.getElementById('phStatus'),pc);
+  document.getElementById('phSubStatus').textContent=d.phStatus;setColor(document.getElementById('phSubStatus'),pc);
+  document.getElementById('phBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
+  document.getElementById('phDot').style.background=pc;
+
+  var lv=document.getElementById('luxVal');
+  lv.textContent=d.lux;setColor(lv,lc);flash(lv);
+  var ll=luxLabel(d.lux);
+  document.getElementById('lightStatus').textContent=d.lightStatus||ll;setColor(document.getElementById('lightStatus'),lc);
+  document.getElementById('luxSubStatus').textContent=ll;setColor(document.getElementById('luxSubStatus'),lc);
+  document.getElementById('luxBar').style.cssText='width:'+Math.min((d.lux/80000)*100,100)+'%;background:'+lc;
+  document.getElementById('luxDot').style.background=lc;
+
+  var bv=document.getElementById('batPctVal');
+  bv.textContent=d.batPct;setColor(bv,bc);flash(bv);
+  document.getElementById('batStatusLabel').textContent=d.batStatus;setColor(document.getElementById('batStatusLabel'),bc);
+  document.getElementById('batVoltVal').textContent=parseFloat(d.batV).toFixed(2)+'V';setColor(document.getElementById('batVoltVal'),bc);
+  document.getElementById('batBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
+  document.getElementById('batDot').style.background=bc;
+
+  var ring=document.getElementById('healthRing');
+  ring.setAttribute('stroke-dashoffset',off.toFixed(1));
+  ring.setAttribute('stroke',hc2);
+  var hp=document.getElementById('healthPct');
+  hp.textContent=d.health+'%';hp.setAttribute('fill',hc2);
+
+  document.getElementById('mTempBar').style.cssText='width:'+Math.min((d.temp/50)*100,100)+'%;background:'+tc;
+  document.getElementById('mTempVal').textContent=d.temp+'\u00B0C';
+  document.getElementById('mHumBar').style.cssText='width:'+d.humidity+'%;background:'+hc;
+  document.getElementById('mHumVal').textContent=d.humidity+'%';
+  document.getElementById('mSoilBar').style.cssText='width:'+d.soil+'%;background:'+sc;
+  document.getElementById('mSoilVal').textContent=d.soil+'%';
+  document.getElementById('mPhBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
+  document.getElementById('mPhVal').textContent=parseFloat(d.ph).toFixed(2);
+  document.getElementById('mLuxBar').style.cssText='width:'+Math.min((d.lux/80000)*100,100)+'%;background:'+lc;
+  document.getElementById('mLuxVal').textContent=d.lux+' lx';
+  document.getElementById('mBatBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
+  document.getElementById('mBatVal').textContent=d.batPct+'%';
+
+  var banner=document.getElementById('alertBanner');
+  var aIcon=document.getElementById('alertIcon');
+  var aMsg=document.getElementById('alertMsg');
+  if(d.soil<30){
+    banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #ef4444;background:#fef2f2;color:#dc2626;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='WATER YOUR PLANT NOW!';
+  }else if(d.ph<5.0||d.ph>8.5){
+    banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Soil pH out of range \u2014 check fertiliser!';
+  }else if(d.batPct<20){
+    banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Battery low \u2014 charge soon!';
+  }else{
+    banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
+    aIcon.textContent='\u2705';aMsg.innerHTML='Plant is healthy &amp; happy';
+  }
+
+  pushChart(d.temp,d.humidity,d.soil,d.ph,d.lux);
+
+  var n=new Date();
+  document.getElementById('lastRead').textContent='Last reading: '+
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+
+var fails=0;
+function generateTestData(){
+  console.log('Generating test data...');
+  fetch('/api/mock')
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(function(d){
+      console.log('Mock data generated:',d);
+      fails=0;
+      var cs=document.getElementById('connStatus');
+      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      if(d && typeof d==='object'){
+        var data={
+          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+          batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
+          tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
+          soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
+          phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
+          batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
+          lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+        };
+        applyData(data);
+        addToReportData(d);
+      }
+    })
+    .catch(function(err){
+      console.error('Mock data error:',err);
+    });
+}
+
+function fetchData(){
+  fetch('/api/latest')
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(function(d){
+      console.log('Latest data:',d);
+      fails=0;
+      var cs=document.getElementById('connStatus');
+      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      if(d && typeof d==='object'){
+        var data={
+          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+          batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
+          tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
+          soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
+          phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
+          batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
+          lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+        };
+        applyData(data);
+        addToReportData(d);
+      }
+    })
+    .catch(function(err){
+      console.error('Fetch error:',err);
+      fails++;
+      if(fails>=3){
+        var cs=document.getElementById('connStatus');
+        cs.textContent='\u2022 Reconnecting...';cs.style.color='#f59e0b';
+      }
+    });
+}
+
+function streamData(){
+  console.log('Opening stream...');
+  var stream=new EventSource('/api/stream');
+  stream.onmessage=function(e){
+    console.log('Stream message:',e.data);
+    try{
+      var d=JSON.parse(e.data);
+      console.log('Parsed data:',d);
+      fails=0;
+      var cs=document.getElementById('connStatus');
+      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      var data={
+        temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+        batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
+        tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
+        soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
+        phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
+        batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
+        lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+      };
+      applyData(data);
+      addToReportData(d);
+    }catch(ex){console.error('Parse error:',ex);}
+  };
+  stream.onerror=function(e){
+    console.error('Stream error:',e);
+    fails++;
+    if(fails>=3){
+      var cs=document.getElementById('connStatus');
+      cs.textContent='\u2022 Reconnecting...';cs.style.color='#f59e0b';
+    }
+    stream.close();
+    setTimeout(streamData,3000);
+  };
+}
+
+// Report Data Management
+var reportData=[];
+var currentPage=1;
+var pageSize=10;
+
+function addToReportData(d){
+  var entry={
+    timestamp:new Date(),
+    temp:d.temp||0,
+    humidity:d.humidity||0,
+    soil:d.soil||0,
+    ph:d.ph||0,
+    lux:d.lux||0,
+    batPct:d.batPct||0
+  };
+  reportData.unshift(entry);
+  if(reportData.length>500){reportData.pop();}
+  updateReportDisplay();
+}
+
+function updateReportDisplay(){
+  updateReportStatistics();
+  updateReportTable();
+}
+
+function updateReportStatistics(){
+  if(reportData.length===0){
+    document.getElementById('reportAvgTemp').textContent='--';
+    document.getElementById('reportAvgHum').textContent='--';
+    document.getElementById('reportAvgSoil').textContent='--';
+    document.getElementById('reportAvgPH').textContent='--';
+    document.getElementById('reportAvgLux').textContent='--';
+    document.getElementById('reportAvgBat').textContent='--';
+    return;
+  }
+  var avgTemp=reportData.reduce(function(s,d){return s+d.temp;},0)/reportData.length;
+  var avgHum=reportData.reduce(function(s,d){return s+d.humidity;},0)/reportData.length;
+  var avgSoil=reportData.reduce(function(s,d){return s+d.soil;},0)/reportData.length;
+  var avgPH=reportData.reduce(function(s,d){return s+d.ph;},0)/reportData.length;
+  var avgLux=reportData.reduce(function(s,d){return s+d.lux;},0)/reportData.length;
+  var avgBat=reportData.reduce(function(s,d){return s+d.batPct;},0)/reportData.length;
+
+  document.getElementById('reportAvgTemp').textContent=avgTemp.toFixed(1);
+  document.getElementById('reportAvgHum').textContent=avgHum.toFixed(0);
+  document.getElementById('reportAvgSoil').textContent=avgSoil.toFixed(0);
+  document.getElementById('reportAvgPH').textContent=avgPH.toFixed(2);
+  document.getElementById('reportAvgLux').textContent=avgLux.toFixed(0);
+  document.getElementById('reportAvgBat').textContent=avgBat.toFixed(0);
+}
+
+function updateReportTable(){
+  var start=(currentPage-1)*pageSize;
+  var end=start+pageSize;
+  var pageData=reportData.slice(start,end);
+  var tbody=document.getElementById('reportTableBody');
+  tbody.innerHTML='';
+  if(pageData.length===0){
+    tbody.innerHTML='<tr style="border-bottom:1px solid var(--border)"><td colspan="8" style="padding:20px;text-align:center;color:var(--muted)">No data available</td></tr>';
+    document.getElementById('pageInfo').textContent='Page --';
+    return;
+  }
+  pageData.forEach(function(row){
+    var status=row.soil<30?'Dry':(row.temp>35||row.temp<15?'Alert':(row.ph>8||row.ph<5?'Warning':'Good'));
+    var statusColor=status==='Good'?'#22c55e':(status==='Alert'?'#ef4444':'#f59e0b');
+    var tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid var(--border)';
+    tr.innerHTML='<td style="padding:10px;text-align:left">'+
+      (row.timestamp instanceof Date?row.timestamp.toLocaleString():'--')+
+      '</td>'+
+      '<td style="padding:10px;text-align:center">'+row.temp.toFixed(1)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.humidity.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.soil.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.ph.toFixed(2)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.lux.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.batPct.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center;color:'+statusColor+';font-weight:600">'+status+'</td>';
+    tbody.appendChild(tr);
+  });
+  var totalPages=Math.ceil(reportData.length/pageSize);
+  document.getElementById('pageInfo').textContent='Page '+currentPage+' of '+Math.max(1,totalPages);
+}
+
+function nextPage(){
+  var totalPages=Math.ceil(reportData.length/pageSize)||1;
+  if(currentPage<totalPages){currentPage++;updateReportTable();}
+}
+
+function prevPage(){
+  if(currentPage>1){currentPage--;updateReportTable();}
+}
+
+function changePageSize(){
+  pageSize=parseInt(document.getElementById('pageSize').value);
+  currentPage=1;
+  updateReportTable();
+}
+
+function exportReport(format){
+  if(reportData.length===0){alert('No data to export');return;}
+  if(format==='csv'){
+    var csv='Timestamp,Temperature (°C),Humidity (%),Soil Moisture (%),pH,Light (lx),Battery (%)\\n';
+    reportData.forEach(function(row){
+      csv+=((row.timestamp instanceof Date?row.timestamp.toLocaleString():'--')+','+
+        row.temp.toFixed(1)+','+row.humidity.toFixed(0)+','+row.soil.toFixed(0)+','+
+        row.ph.toFixed(2)+','+row.lux.toFixed(0)+','+row.batPct.toFixed(0)+'\\n');
+    });
+    downloadFile(csv,'plant-report.csv','text/csv');
+  }else if(format==='json'){
+    var json=JSON.stringify(reportData,null,2);
+    downloadFile(json,'plant-report.json','application/json');
+  }
+}
+
+function downloadFile(content,filename,type){
+  var blob=new Blob([content],{type:type});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// View Management
+var currentView='dashboard';
+var currentReportPeriod='today';
+
+function switchView(view){
+  currentView=view;
+  var dashboard=document.getElementById('dashboardView');
+  var reports=document.getElementById('reportsView');
+  var navDashboard=document.getElementById('navDashboard');
+  var navReports=document.getElementById('navReports');
+  
+  if(view==='dashboard'){
+    dashboard.style.display='block';
+    reports.style.display='none';
+    navDashboard.classList.add('active');
+    navReports.classList.remove('active');
+  }else if(view==='reports'){
+    dashboard.style.display='none';
+    reports.style.display='block';
+    navDashboard.classList.remove('active');
+    navReports.classList.add('active');
+    updateReportDisplay();
+  }
+}
+
+// Report Period Filtering
+function setReportPeriod(period){
+  currentReportPeriod=period;
+  updateButtonStates();
+  updateReportDisplay();
+}
+
+function updateButtonStates(){
+  var buttons=['btnToday','btnWeek','btnMonth','btnAll'];
+  buttons.forEach(function(btn){
+    var el=document.getElementById(btn);
+    if(btn==='btn'+currentReportPeriod.charAt(0).toUpperCase()+currentReportPeriod.slice(1)){
+      el.style.background='#3b82f6';
+      el.style.color='#fff';
+      el.style.border='1px solid #3b82f6';
+    }else{
+      el.style.background='var(--card)';
+      el.style.color='var(--text)';
+      el.style.border='1px solid var(--border)';
+    }
+  });
+}
+
+function getFilteredReportData(){
+  if(reportData.length===0) return [];
+  var now=new Date();
+  var filtered=[];
+  
+  reportData.forEach(function(row){
+    var rowDate=row.timestamp instanceof Date?row.timestamp:new Date(row.timestamp);
+    var diffMs=now-rowDate;
+    var diffHours=diffMs/(1000*60*60);
+    var diffDays=diffHours/24;
+    
+    if(currentReportPeriod==='today' && diffDays<=1){
+      filtered.push(row);
+    }else if(currentReportPeriod==='week' && diffDays<=7){
+      filtered.push(row);
+    }else if(currentReportPeriod==='month' && diffDays<=30){
+      filtered.push(row);
+    }else if(currentReportPeriod==='all'){
+      filtered.push(row);
+    }
+  });
+  return filtered;
+}
+
+function updateReportDisplay(){
+  updateReportStatistics();
+  updateReportTable();
+}
+
+function updateReportStatistics(){
+  var filtered=getFilteredReportData();
+  if(filtered.length===0){
+    document.getElementById('reportAvgTemp').textContent='--';
+    document.getElementById('reportAvgHum').textContent='--';
+    document.getElementById('reportAvgSoil').textContent='--';
+    document.getElementById('reportAvgPH').textContent='--';
+    document.getElementById('reportAvgLux').textContent='--';
+    document.getElementById('reportAvgBat').textContent='--';
+    return;
+  }
+  var avgTemp=filtered.reduce(function(s,d){return s+d.temp;},0)/filtered.length;
+  var avgHum=filtered.reduce(function(s,d){return s+d.humidity;},0)/filtered.length;
+  var avgSoil=filtered.reduce(function(s,d){return s+d.soil;},0)/filtered.length;
+  var avgPH=filtered.reduce(function(s,d){return s+d.ph;},0)/filtered.length;
+  var avgLux=filtered.reduce(function(s,d){return s+d.lux;},0)/filtered.length;
+  var avgBat=filtered.reduce(function(s,d){return s+d.batPct;},0)/filtered.length;
+
+  document.getElementById('reportAvgTemp').textContent=avgTemp.toFixed(1);
+  document.getElementById('reportAvgHum').textContent=avgHum.toFixed(0);
+  document.getElementById('reportAvgSoil').textContent=avgSoil.toFixed(0);
+  document.getElementById('reportAvgPH').textContent=avgPH.toFixed(2);
+  document.getElementById('reportAvgLux').textContent=avgLux.toFixed(0);
+  document.getElementById('reportAvgBat').textContent=avgBat.toFixed(0);
+}
+
+function updateReportTable(){
+  var filtered=getFilteredReportData();
+  var start=(currentPage-1)*pageSize;
+  var end=start+pageSize;
+  var pageData=filtered.slice(start,end);
+  var tbody=document.getElementById('reportTableBody');
+  tbody.innerHTML='';
+  if(pageData.length===0){
+    tbody.innerHTML='<tr style="border-bottom:1px solid var(--border)"><td colspan="8" style="padding:20px;text-align:center;color:var(--muted)">No data available for '+currentReportPeriod+'</td></tr>';
+    document.getElementById('pageInfo').textContent='Page --';
+    return;
+  }
+  pageData.forEach(function(row){
+    var status=row.soil<30?'Dry':(row.temp>35||row.temp<15?'Alert':(row.ph>8||row.ph<5?'Warning':'Good'));
+    var statusColor=status==='Good'?'#22c55e':(status==='Alert'?'#ef4444':'#f59e0b');
+    var tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid var(--border)';
+    tr.innerHTML='<td style="padding:10px;text-align:left">'+
+      (row.timestamp instanceof Date?row.timestamp.toLocaleString():'--')+
+      '</td>'+
+      '<td style="padding:10px;text-align:center">'+row.temp.toFixed(1)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.humidity.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.soil.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.ph.toFixed(2)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.lux.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center">'+row.batPct.toFixed(0)+'</td>'+
+      '<td style="padding:10px;text-align:center;color:'+statusColor+';font-weight:600">'+status+'</td>';
+    tbody.appendChild(tr);
+  });
+  var totalPages=Math.ceil(filtered.length/pageSize)||1;
+  document.getElementById('pageInfo').textContent='Page '+currentPage+' of '+totalPages;
+}
+
+function printReport(){
+  var filtered=getFilteredReportData();
+  if(filtered.length===0){alert('No data to print');return;}
+  var printWindow=window.open('','Print','height=600,width=800');
+  printWindow.document.write('<html><head><title>PlantOS Report - '+currentReportPeriod+'</title>');
+  printWindow.document.write('<style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5;font-weight:bold}h1{color:#22c55e}</style>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write('<h1>PlantOS - '+currentReportPeriod.toUpperCase()+' Report</h1>');
+  printWindow.document.write('<p>Generated: '+new Date().toLocaleString()+'</p>');
+  printWindow.document.write('<p>Total Records: '+filtered.length+'</p>');
+  printWindow.document.write('<table><tr><th>Timestamp</th><th>Temp (°C)</th><th>Humidity (%)</th><th>Soil (%)</th><th>pH</th><th>Light (lx)</th><th>Battery (%)</th></tr>');
+  filtered.forEach(function(row){
+    printWindow.document.write('<tr><td>'+(row.timestamp instanceof Date?row.timestamp.toLocaleString():'--')+
+      '</td><td>'+row.temp.toFixed(1)+
+      '</td><td>'+row.humidity.toFixed(0)+
+      '</td><td>'+row.soil.toFixed(0)+
+      '</td><td>'+row.ph.toFixed(2)+
+      '</td><td>'+row.lux.toFixed(0)+
+      '</td><td>'+row.batPct.toFixed(0)+'</td></tr>');
+  });
+  printWindow.document.write('</table></body></html>');
+  printWindow.document.close();
+  printWindow.print();
+}
+
+fetchData();
+setInterval(fetchData,3000);
+setTimeout(streamData,500);
+</script>
+</body>
+</html>

@@ -1,131 +1,526 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PlantOS Dashboard</title>
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 18px; background: #f6f7fb; color: #111; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-    .card { background: #fff; border: 1px solid #e6e8ef; border-radius: 12px; padding: 12px 14px; min-width: 170px; }
-    .k { font-size: 12px; color: #667085; margin-bottom: 6px; }
-    .v { font-size: 20px; font-weight: 700; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { border: 1px solid #e6e8ef; padding: 8px 10px; font-size: 12.5px; }
-    th { background: #f1f4ff; text-align: left; }
-    caption { caption-side: top; text-align: left; font-weight: 700; margin: 16px 0 10px; }
-    .muted { color: #667085; font-size: 13px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantOS Premium Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --border: #334155;
+            
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            background: var(--surface-color);
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        /* Dashboard Grid */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .card-unit {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-container {
+            background: var(--surface-color);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            height: 350px;
+        }
+
+        /* Reports Section */
+        #reports-section {
+            display: none;
+        }
+
+        .report-controls {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .report-controls select, .report-controls button {
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .report-controls button {
+            background: var(--primary);
+            border: none;
+            font-weight: 600;
+            transition: box-shadow 0.2s;
+        }
+        
+        .report-controls button:hover {
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .report-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: rgba(0,0,0,0.2);
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-container { height: 300px; }
+            body { padding: 1rem; }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
 </head>
 <body>
-  <h1>PlantOS Dashboard</h1>
-  <div class="muted">ESP32 sends sensor readings to Spring Boot. Page refreshes automatically.</div>
 
-  <div class="row" id="latestRow">
-    <div class="card"><div class="k">Temp (C)</div><div class="v" id="temp">--</div></div>
-    <div class="card"><div class="k">Humidity (%)</div><div class="v" id="humidity">--</div></div>
-    <div class="card"><div class="k">Soil (%)</div><div class="v" id="soil">--</div></div>
-    <div class="card"><div class="k">pH</div><div class="v" id="ph">--</div></div>
-    <div class="card"><div class="k">Lux (lx)</div><div class="v" id="lux">--</div></div>
-    <div class="card"><div class="k">Battery (V)</div><div class="v" id="batV">--</div></div>
-    <div class="card"><div class="k">Battery (%)</div><div class="v" id="batPct">--</div></div>
-    <div class="card"><div class="k">Health</div><div class="v" id="health">--</div></div>
-  </div>
+    <div class="header">
+        <div class="title">PlantOS</div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Live Dashboard</button>
+            <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+        </div>
+    </div>
 
-  <table>
-    <caption>History (latest first)</caption>
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>Temp</th>
-        <th>Humidity</th>
-        <th>Soil</th>
-        <th>pH</th>
-        <th>Lux</th>
-        <th>Bat V</th>
-        <th>Bat %</th>
-        <th>Health</th>
-      </tr>
-    </thead>
-    <tbody id="historyBody">
-      <tr><td colspan="9" class="muted">Waiting for data...</td></tr>
-    </tbody>
-  </table>
+    <!-- Live Dashboard Section -->
+    <div id="dashboard-section">
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-label">Temperature</div>
+                <div class="card-value"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Humidity</div>
+                <div class="card-value"><span id="val-humidity">--</span><span class="card-unit">%</span></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Soil Moisture</div>
+                <div class="card-value"><span id="val-soil">--</span><span class="card-unit">%</span></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Soil pH</div>
+                <div class="card-value"><span id="val-ph">--</span></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Light (Lux)</div>
+                <div class="card-value"><span id="val-lux">--</span><span class="card-unit"> lx</span></div>
+            </div>
+            <div class="card">
+                <div class="card-label">Battery</div>
+                <div class="card-value"><span id="val-batPct">--</span><span class="card-unit">%</span></div>
+            </div>
+        </div>
 
-  <script>
-    const els = {
-      temp: document.getElementById('temp'),
-      humidity: document.getElementById('humidity'),
-      soil: document.getElementById('soil'),
-      ph: document.getElementById('ph'),
-      lux: document.getElementById('lux'),
-      batV: document.getElementById('batV'),
-      batPct: document.getElementById('batPct'),
-      health: document.getElementById('health'),
-    };
+        <div class="charts-grid">
+            <div class="chart-container">
+                <canvas id="envChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="soilChart"></canvas>
+            </div>
+        </div>
+    </div>
 
-    function formatTS(ts) {
-      try {
-        const d = new Date(ts);
-        return d.toLocaleString();
-      } catch (e) {
-        return ts;
-      }
-    }
+    <!-- Reports Section -->
+    <div id="reports-section">
+        <div class="report-controls">
+            <select id="reportType">
+                <option value="monthly">Monthly Report</option>
+                <option value="yearly">Yearly Report</option>
+            </select>
+            <select id="reportMonth">
+                <option value="0">January</option>
+                <option value="1">February</option>
+                <option value="2">March</option>
+                <option value="3">April</option>
+                <option value="4" selected>May</option>
+                <option value="5">June</option>
+                <option value="6">July</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">October</option>
+                <option value="10">November</option>
+                <option value="11">December</option>
+            </select>
+            <select id="reportYear">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+            </select>
+            <button onclick="generateReport()">Generate Report</button>
+        </div>
 
-    async function fetchJson(url) {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return await res.json();
-    }
+        <div class="report-summary-grid">
+            <div class="card">
+                <div class="card-label">Avg Temperature</div>
+                <div class="card-value" id="rep-avg-temp">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Avg Humidity</div>
+                <div class="card-value" id="rep-avg-hum">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Avg Soil Moisture</div>
+                <div class="card-value" id="rep-avg-soil">--</div>
+            </div>
+        </div>
 
-    async function refreshLatest() {
-      try {
-        const r = await fetchJson('/api/latest');
-        els.temp.textContent = Number(r.temp).toFixed(1);
-        els.humidity.textContent = Number(r.humidity).toFixed(1);
-        els.soil.textContent = String(r.soil);
-        els.ph.textContent = Number(r.ph).toFixed(2);
-        els.lux.textContent = String(Math.round(r.lux));
-        els.batV.textContent = Number(r.batV).toFixed(2);
-        els.batPct.textContent = String(r.batPct);
-        els.health.textContent = String(r.health);
-      } catch (e) {
-        // If noContent (204) happens before first reading, keep placeholders.
-      }
-    }
+        <div class="chart-container" style="margin-bottom: 2rem;">
+            <canvas id="reportChart"></canvas>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date / Time</th>
+                        <th>Temp (°C)</th>
+                        <th>Humidity (%)</th>
+                        <th>Soil (%)</th>
+                        <th>pH</th>
+                        <th>Lux</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                    <tr><td colspan="6" style="text-align: center; color: var(--text-muted)">Generate a report to see data</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    async function refreshHistory() {
-      try {
-        const list = await fetchJson('/api/history?limit=40');
-        const body = document.getElementById('historyBody');
-        body.innerHTML = '';
-        for (const r of list) {
-          const tr = document.createElement('tr');
-          tr.innerHTML =
-            '<td>' + formatTS(r.ts) + '</td>' +
-            '<td>' + Number(r.temp).toFixed(1) + '</td>' +
-            '<td>' + Number(r.humidity).toFixed(1) + '</td>' +
-            '<td>' + r.soil + '</td>' +
-            '<td>' + Number(r.ph).toFixed(2) + '</td>' +
-            '<td>' + Math.round(r.lux) + '</td>' +
-            '<td>' + Number(r.batV).toFixed(2) + '</td>' +
-            '<td>' + r.batPct + '</td>' +
-            '<td>' + r.health + '</td>';
-          body.appendChild(tr);
+    <script>
+        // Tab Switching
+        function switchTab(tabId) {
+            document.getElementById('dashboard-section').style.display = tabId === 'dashboard' ? 'block' : 'none';
+            document.getElementById('reports-section').style.display = tabId === 'reports' ? 'block' : 'none';
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tabId === 'dashboard') {
+                updateDashboard();
+            } else {
+                generateReport();
+            }
         }
-      } catch (e) {
-        // ignore
-      }
-    }
 
-    refreshLatest();
-    refreshHistory();
-    setInterval(() => {
-      refreshLatest();
-      refreshHistory();
-    }, 2000);
-  </script>
+        // Global Chart instances
+        let envChart, soilChart, reportChart;
+
+        // Common Chart.js options for dark theme
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#334155';
+        
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 6 } }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: false }
+            },
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHitRadius: 10
+        };
+
+        function initCharts() {
+            const ctxEnv = document.getElementById('envChart').getContext('2d');
+            envChart = new Chart(ctxEnv, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Temperature (°C)', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', data: [], fill: true },
+                    { label: 'Humidity (%)', borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', data: [], fill: true }
+                ]},
+                options: { ...commonOptions, plugins: { title: { display: true, text: 'Environment Trends' } } }
+            });
+
+            const ctxSoil = document.getElementById('soilChart').getContext('2d');
+            soilChart = new Chart(ctxSoil, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Soil Moisture (%)', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', data: [], fill: true },
+                    { label: 'Soil pH (x10)', borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', data: [], fill: true }
+                ]},
+                options: { ...commonOptions, plugins: { title: { display: true, text: 'Soil Conditions' } } }
+            });
+            
+            const ctxReport = document.getElementById('reportChart').getContext('2d');
+            reportChart = new Chart(ctxReport, {
+                type: 'bar',
+                data: { labels: [], datasets: [
+                    { label: 'Avg Temp', backgroundColor: '#ef4444', data: [] },
+                    { label: 'Avg Humidity', backgroundColor: '#3b82f6', data: [] },
+                    { label: 'Avg Soil', backgroundColor: '#10b981', data: [] }
+                ]},
+                options: { ...commonOptions, tension: 0, plugins: { title: { display: true, text: 'Report Overview' } } }
+            });
+        }
+
+        async function fetchJson(url) {
+            try {
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function formatTime(ts) {
+            const d = new Date(ts);
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        
+        function formatDate(ts) {
+            const d = new Date(ts);
+            return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function updateDashboard() {
+            if (document.getElementById('dashboard-section').style.display === 'none') return;
+
+            const latest = await fetchJson('/api/latest');
+            if (latest) {
+                document.getElementById('val-temp').innerText = latest.temp.toFixed(1);
+                document.getElementById('val-humidity').innerText = latest.humidity.toFixed(1);
+                document.getElementById('val-soil').innerText = latest.soil;
+                document.getElementById('val-ph').innerText = latest.ph.toFixed(1);
+                document.getElementById('val-lux').innerText = Math.round(latest.lux);
+                document.getElementById('val-batPct').innerText = latest.batPct;
+            }
+
+            const history = await fetchJson('/api/history?limit=40');
+            if (history && history.length > 0) {
+                const chartData = [...history].reverse(); // oldest first for chart
+
+                const labels = chartData.map(d => formatTime(d.ts));
+                
+                // Update Env Chart
+                envChart.data.labels = labels;
+                envChart.data.datasets[0].data = chartData.map(d => d.temp);
+                envChart.data.datasets[1].data = chartData.map(d => d.humidity);
+                envChart.update();
+
+                // Update Soil Chart
+                soilChart.data.labels = labels;
+                soilChart.data.datasets[0].data = chartData.map(d => d.soil);
+                soilChart.data.datasets[1].data = chartData.map(d => d.ph * 10); // Scale pH for visibility
+                soilChart.update();
+            }
+        }
+
+        async function generateReport() {
+            const type = document.getElementById('reportType').value;
+            // Simulated report using history API with higher limit
+            const history = await fetchJson('/api/history?limit=200');
+            if (!history || history.length === 0) return;
+
+            let totalTemp = 0, totalHum = 0, totalSoil = 0;
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+            
+            // Group by day for the chart (simulation)
+            const grouped = {};
+
+            history.forEach(r => {
+                totalTemp += r.temp;
+                totalHum += r.humidity;
+                totalSoil += r.soil;
+
+                const d = new Date(r.ts);
+                const dayKey = d.toLocaleDateString();
+                if (!grouped[dayKey]) grouped[dayKey] = { t:0, h:0, s:0, count:0 };
+                grouped[dayKey].t += r.temp;
+                grouped[dayKey].h += r.humidity;
+                grouped[dayKey].s += r.soil;
+                grouped[dayKey].count++;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatDate(r.ts)}</td>
+                    <td>${r.temp.toFixed(1)}</td>
+                    <td>${r.humidity.toFixed(1)}</td>
+                    <td>${r.soil}</td>
+                    <td>${r.ph.toFixed(2)}</td>
+                    <td>${Math.round(r.lux)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('rep-avg-temp').innerText = (totalTemp / history.length).toFixed(1) + '°C';
+            document.getElementById('rep-avg-hum').innerText = (totalHum / history.length).toFixed(1) + '%';
+            document.getElementById('rep-avg-soil').innerText = (totalSoil / history.length).toFixed(0) + '%';
+
+            // Update Report Chart
+            const labels = Object.keys(grouped).reverse();
+            reportChart.data.labels = labels;
+            reportChart.data.datasets[0].data = labels.map(k => grouped[k].t / grouped[k].count);
+            reportChart.data.datasets[1].data = labels.map(k => grouped[k].h / grouped[k].count);
+            reportChart.data.datasets[2].data = labels.map(k => grouped[k].s / grouped[k].count);
+            reportChart.update();
+        }
+
+        // Handle Report Type change UI
+        document.getElementById('reportType').addEventListener('change', (e) => {
+            const isYearly = e.target.value === 'yearly';
+            document.getElementById('reportMonth').style.display = isYearly ? 'none' : 'inline-block';
+        });
+
+        // Init
+        initCharts();
+        updateDashboard();
+        
+        // Auto refresh dashboard every 5 seconds
+        setInterval(updateDashboard, 5000);
+    </script>
 </body>
 </html>
-

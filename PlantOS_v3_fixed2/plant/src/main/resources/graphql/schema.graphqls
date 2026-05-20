@@ -1,0 +1,73 @@
+type Query {
+    """
+    Get all sensor readings
+    """
+    allSensorReadings(limit: Int): [SensorReading!]!
+
+    """
+    Get a sensor reading by ID
+    """
+    sensorReading(id: Long!): SensorReading
+
+    """
+    Get latest sensor readings (most recent first)
+    """
+    latestReadings(limit: Int): [SensorReading!]!
+
+    """
+    Get sensor readings by pH range
+    """
+    readingsByPh(minPh: Float!, maxPh: Float!): [SensorReading!]!
+
+    """
+    Get sensor readings by soil moisture range
+    """
+    readingsBySoil(minSoil: Int!, maxSoil: Int!): [SensorReading!]!
+
+    """
+    Get the latest pH and soil moisture readings
+    """
+    latestPHAndSoilReading: SensorReading
+}
+
+type Mutation {
+    """
+    Add a new sensor reading with pH and soil moisture data
+    """
+    addSensorReading(input: SensorReadingInput!): SensorReading!
+
+    """
+    Add multiple sensor readings
+    """
+    addMultipleSensorReadings(readings: [SensorReadingInput!]!): [SensorReading!]!
+}
+
+"""
+Sensor Reading data type
+"""
+type SensorReading {
+    id: Long!
+    ts: String!
+    temp: Float!
+    humidity: Float!
+    soil: Int!
+    ph: Float!
+    lux: Float!
+    batV: Float!
+    batPct: Int!
+    health: Int!
+}
+
+"""
+Input type for sensor readings
+"""
+input SensorReadingInput {
+    temp: Float!
+    humidity: Float!
+    soil: Int!
+    ph: Float!
+    lux: Float!
+    batV: Float!
+    batPct: Int!
+    health: Int!
+}
