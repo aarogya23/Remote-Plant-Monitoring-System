@@ -12,6 +12,7 @@
 html{overflow-x:hidden}
 body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
 .sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:10}
+.nav-overlay{position:fixed;inset:0;background:rgba(15,23,42,.36);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;z-index:9}
 .logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-icon{width:36px;height:36px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
 .logo-name{font-weight:700;font-size:17px;letter-spacing:-.3px}
@@ -27,6 +28,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .device-name{font-size:12px;font-weight:600}
 .device-status{font-size:11px;color:#22c55e;font-weight:500}
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.mobile-nav{display:none;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:8}
+.mobile-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mobile-brand .logo-name{font-size:18px}
+.hamburger-btn{width:42px;height:42px;border:1px solid var(--border);border-radius:12px;background:#f8fafc;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.hamburger-btn span{font-size:20px;line-height:1}
 .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}
 .topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
 .topbar-title p{font-size:12px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
@@ -99,7 +105,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 @keyframes flashUpdate{0%{opacity:1}30%{opacity:.4}100%{opacity:1}}
 .updated{animation:flashUpdate .4s ease}
 @media(max-width:960px){
-  .sidebar{display:none}.main{margin-left:0}
+  .sidebar{display:flex;transform:translateX(-100%);transition:transform .25s ease,box-shadow .25s ease}
+  body.nav-open .sidebar{transform:translateX(0);box-shadow:0 18px 48px rgba(15,23,42,.18)}
+  body.nav-open .nav-overlay{opacity:1;visibility:visible}
+  .main{margin-left:0}
+  .mobile-nav{display:flex}
   .topbar,.content{padding-left:20px;padding-right:20px}
   .topbar{flex-wrap:wrap;align-items:flex-start}
   .topbar-right{width:100%;justify-content:flex-start}
@@ -107,6 +117,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   .bottom-row{grid-template-columns:1fr}
 }
 @media(max-width:640px){
+  .mobile-nav{padding:12px 16px}
   .topbar{padding:14px 16px}
   .content{padding:16px}
   .topbar-title h2{font-size:18px}
@@ -133,14 +144,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
   <div class="nav-section">
     <div class="nav-label">Main</div>
-    <a class="nav-item active" id="navDashboard" href="javascript:void(0)" onclick="switchView('dashboard')"><span class="nav-icon">&#9783;</span> Dashboard</a>
-    <a class="nav-item" id="navReports" href="javascript:void(0)" onclick="switchView('reports')"><span class="nav-icon">&#128200;</span> Reports</a>
-    <a class="nav-item" href="#"><span class="nav-icon">&#128276;</span> Alerts</a>
+    <a class="nav-item active" id="navDashboard" href="javascript:void(0)" onclick="switchView('dashboard');closeSidebar()"><span class="nav-icon">&#9783;</span> Dashboard</a>
+    <a class="nav-item" id="navReports" href="javascript:void(0)" onclick="switchView('reports');closeSidebar()"><span class="nav-icon">&#128200;</span> Reports</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> Alerts</a>
   </div>
   <div class="nav-section">
     <div class="nav-label">Settings</div>
-    <a class="nav-item" href="#"><span class="nav-icon">&#9881;</span> Config</a>
-    <a class="nav-item" href="#"><span class="nav-icon">&#128268;</span> Device</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> Config</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> Device</a>
   </div>
   <div class="sidebar-footer">
     <div class="device-chip">
@@ -153,7 +164,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
 </aside>
 
+<div class="nav-overlay" onclick="closeSidebar()"></div>
+
 <div class="main">
+  <div class="mobile-nav">
+    <div class="mobile-brand">
+      <div class="logo-icon">&#127807;</div>
+      <span class="logo-name">PlantOS</span>
+    </div>
+    <button class="hamburger-btn" type="button" onclick="toggleSidebar()" aria-label="Toggle navigation">
+      <span>&#9776;</span>
+    </button>
+  </div>
   <div class="topbar">
     <div class="topbar-title">
       <h2>Plant Dashboard</h2>
@@ -475,6 +497,12 @@ function luxLabel(v){
 }
 function setColor(el,c){el.style.color=c;}
 function flash(el){el.classList.remove('updated');void el.offsetWidth;el.classList.add('updated');}
+function toggleSidebar(){document.body.classList.toggle('nav-open');}
+function closeSidebar(){document.body.classList.remove('nav-open');}
+
+window.addEventListener('resize',function(){
+  if(window.innerWidth>960) closeSidebar();
+});
 
 function updateClock(){
   var n=new Date();
