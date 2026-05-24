@@ -9,7 +9,8 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f4f6f9;--card:#fff;--border:#e8ecf0;--text:#1a2332;--muted:#7a8694;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace}
-body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+html{overflow-x:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
 .sidebar{width:220px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:10}
 .logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-icon{width:36px;height:36px;background:#dcfce7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -26,57 +27,100 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .device-name{font-size:12px;font-weight:600}
 .device-status{font-size:11px;color:#22c55e;font-weight:500}
 .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}
 .topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
 .topbar-title p{font-size:12px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
-.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 .live-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:12px;font-weight:600;color:#16a34a}
 .live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .time-display{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--muted);background:#f8fafc;padding:5px 12px;border-radius:8px;border:1px solid var(--border)}
 .content{padding:24px 28px;display:flex;flex-direction:column;gap:20px}
 .wifi-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 16px;font-size:12px;color:#1d4ed8;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.alert-banner{padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;transition:all .4s}
-.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.card{background:var(--card);border-radius:14px;padding:18px 20px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.alert-banner{padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;flex-wrap:wrap;transition:all .4s}
+.cards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.card{background:var(--card);border-radius:14px;padding:18px 20px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
 .card-icon{width:40px;height:40px;border-radius:11px;background:#f8fafc;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px}
 .card-delta{font-size:11.5px;font-weight:700;font-family:var(--mono);transition:color .3s}
 .card-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px}
-.card-value{font-size:34px;font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;transition:color .3s}
+.card-value{font-size:clamp(28px,4vw,34px);font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;transition:color .3s;word-break:break-word}
 .card-unit{font-size:15px;font-weight:500;color:var(--muted);margin-left:2px}
-.card-sub{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600}
+.card-sub{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;flex-wrap:wrap}
 .card-bar-track{height:5px;background:#f1f5f9;border-radius:10px;margin-top:10px;overflow:hidden}
 .card-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
 .status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .3s}
-.bottom-row{display:grid;grid-template-columns:1fr 320px;gap:16px}
-.chart-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.bottom-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,320px);gap:16px}
+.chart-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
 .chart-title{font-size:15px;font-weight:700}
 .chart-sub{font-size:12px;color:var(--muted);margin-top:2px}
-.chart-area{width:100%;height:220px;margin-top:16px}
+.chart-area{width:100%;height:clamp(180px,30vw,220px);margin-top:16px}
 .sparkline{width:100%;height:100%}
 .legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500}
 .legend-dot{width:10px;height:10px;border-radius:50%}
-.health-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.health-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
 .health-title{font-size:15px;font-weight:700}
 .health-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .health-ring-wrap{display:flex;justify-content:center;margin:14px 0}
 .health-metrics{display:flex;flex-direction:column;gap:9px}
-.metric-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.metric-row{display:flex;align-items:center;gap:8px;font-size:12px;min-width:0}
 .metric-icon{font-size:13px;width:18px;text-align:center}
 .metric-name{flex:1;font-weight:500;color:var(--muted)}
-.metric-val{font-family:var(--mono);font-size:12px;font-weight:600;transition:color .3s}
-.metric-bar{width:72px;height:4px;background:#f1f5f9;border-radius:10px;overflow:hidden}
+.metric-val{font-family:var(--mono);font-size:12px;font-weight:600;transition:color .3s;white-space:nowrap}
+.metric-bar{width:72px;height:4px;background:#f1f5f9;border-radius:10px;overflow:hidden;flex-shrink:0}
 .metric-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
 .ip-footer{text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding-bottom:8px}
 .pin-info{background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:10px 16px;font-size:12px;color:#92400e;font-family:var(--mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{padding:8px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(15,23,42,.08)}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-success{background:#22c55e;color:#fff}
+.btn-warning{background:#f59e0b;color:#fff}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.reports-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.reports-title h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.reports-title p{font-size:12px;color:var(--muted)}
+.reports-actions,.reports-export,.reports-pagination{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.reports-actions .report-period-btn,.reports-export button,.reports-pagination button{min-height:38px}
+.reports-export button:first-child{background:#22c55e;color:#fff;border:none}
+.reports-export button:nth-child(2){background:#3b82f6;color:#fff;border:none}
+.reports-export button:nth-child(3){background:#f59e0b;color:#fff;border:none}
+.reports-pagination button{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.reports-pagination select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);cursor:pointer;background:var(--card);color:var(--text)}
+.table-wrap{overflow-x:auto;margin-top:16px;-webkit-overflow-scrolling:touch}
+.report-table{width:100%;min-width:720px;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+.report-table th{padding:10px;text-align:center;font-weight:600;color:var(--muted)}
+.report-table th:first-child,.report-table td:first-child{text-align:left}
+.report-table td{padding:10px;text-align:center}
+@media(max-width:1200px){
+  .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @keyframes flashUpdate{0%{opacity:1}30%{opacity:.4}100%{opacity:1}}
 .updated{animation:flashUpdate .4s ease}
 @media(max-width:960px){
   .sidebar{display:none}.main{margin-left:0}
-  .cards-grid{grid-template-columns:repeat(2,1fr)}
+  .topbar,.content{padding-left:20px;padding-right:20px}
+  .topbar{flex-wrap:wrap;align-items:flex-start}
+  .topbar-right{width:100%;justify-content:flex-start}
+  .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .bottom-row{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .topbar{padding:14px 16px}
+  .content{padding:16px}
+  .topbar-title h2{font-size:18px}
+  .topbar-right .btn{margin-right:0!important}
+  .wifi-info,.pin-info,.alert-banner,.card,.chart-card,.health-card{padding-left:16px;padding-right:16px}
+  .cards-grid{grid-template-columns:1fr}
+  .topbar-right>*{width:100%}
+  .btn,.report-period-btn,.reports-export button,.reports-pagination button,.reports-pagination select{width:100%}
+  .reports-actions,.reports-export,.reports-pagination{width:100%}
+  .reports-pagination #pageInfo{width:100%;min-width:0}
+  .metric-row{flex-wrap:wrap}
+  .metric-name{min-width:72px}
+  .metric-bar{width:100%;order:4}
+  .chart-area{height:180px}
 }
 </style>
 </head>
@@ -116,7 +160,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <p id="lastRead">Last reading: --:--:--</p>
     </div>
     <div class="topbar-right">
-      <button onclick="generateTestData()" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-right:10px">Test Data</button>
+      <button onclick="generateTestData()" class="btn btn-primary" style="margin-right:10px">Test Data</button>
       <div class="time-display" id="clockDisp">--:--:--</div>
       <div class="live-badge"><div class="live-dot"></div> Live</div>
     </div>
@@ -316,20 +360,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- Report Section -->
     <div id="reportsView" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-        <div>
-          <h2 style="font-size:22px;font-weight:700;margin-bottom:8px">Data Reports</h2>
-          <p style="font-size:12px;color:var(--muted)">View historical data and analytics</p>
+      <div class="reports-header">
+        <div class="reports-title">
+          <h2>Data Reports</h2>
+          <p>View historical data and analytics</p>
         </div>
-        <div style="display:flex;gap:8px">
-          <button onclick="setReportPeriod('today')" id="btnToday" class="report-period-btn" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Today</button>
-          <button onclick="setReportPeriod('week')" id="btnWeek" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Weekly</button>
-          <button onclick="setReportPeriod('month')" id="btnMonth" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Monthly</button>
-          <button onclick="setReportPeriod('all')" id="btnAll" class="report-period-btn" style="padding:6px 14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">All Data</button>
+        <div class="reports-actions">
+          <button onclick="setReportPeriod('today')" id="btnToday" class="report-period-btn btn btn-primary">Today</button>
+          <button onclick="setReportPeriod('week')" id="btnWeek" class="report-period-btn btn btn-secondary">Weekly</button>
+          <button onclick="setReportPeriod('month')" id="btnMonth" class="report-period-btn btn btn-secondary">Monthly</button>
+          <button onclick="setReportPeriod('all')" id="btnAll" class="report-period-btn btn btn-secondary">All Data</button>
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;margin-bottom:20px">
+      <div class="reports-export" style="margin-bottom:20px">
         <button onclick="exportReport('csv')" style="padding:6px 14px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📥 Export CSV</button>
         <button onclick="exportReport('json')" style="padding:6px 14px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">📥 Export JSON</button>
         <button onclick="printReport()" style="padding:6px 14px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🖨️ Print</button>
@@ -366,8 +410,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <!-- Data Table -->
       <div class="chart-card">
         <div class="chart-title">Historical Data</div>
-        <div style="overflow-x:auto;margin-top:16px">
-          <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)">
+        <div class="table-wrap">
+          <table class="report-table">
             <thead>
               <tr style="border-bottom:2px solid var(--border)">
                 <th style="padding:10px;text-align:left;font-weight:600;color:var(--muted)">Timestamp</th>
@@ -390,7 +434,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       </div>
 
       <!-- Report Pagination -->
-      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:16px">
+      <div class="reports-pagination" style="justify-content:center;margin-top:16px">
         <button onclick="prevPage()" style="padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600">← Prev</button>
         <span id="pageInfo" style="font-size:12px;color:var(--muted);min-width:80px;text-align:center">Page --</span>
         <button onclick="nextPage()" style="padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600">Next →</button>
