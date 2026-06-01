@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface SensorReadingRepository extends JpaRepository<SensorReading, Long> {
@@ -40,5 +41,20 @@ public interface SensorReadingRepository extends JpaRepository<SensorReading, Lo
    */
   @Query("select r from SensorReading r where r.soil >= :minSoil and r.soil <= :maxSoil order by r.ts desc")
   List<SensorReading> findReadingsBySoilRange(@Param("minSoil") Integer minSoil, @Param("maxSoil") Integer maxSoil);
+
+  /**
+   * Find sensor readings after a specific timestamp
+   * @param startTime the minimum timestamp (inclusive)
+   * @return list of readings ordered by timestamp descending
+   */
+  List<SensorReading> findByTsGreaterThanEqualOrderByTsDesc(Instant startTime);
+
+  /**
+   * Find sensor readings between two timestamps
+   * @param startTime the minimum timestamp (inclusive)
+   * @param endTime the maximum timestamp (inclusive)
+   * @return list of readings ordered by timestamp descending
+   */
+  List<SensorReading> findByTsBetweenOrderByTsDesc(Instant startTime, Instant endTime);
 }
 
