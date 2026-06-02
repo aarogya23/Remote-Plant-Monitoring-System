@@ -26,7 +26,7 @@
 // ================================================================
 const char* WIFI_SSID     = "Redmi 13";
 const char* WIFI_PASSWORD = "12345678";
-const char* SERVER_URL    = "http://10.32.225.184:8080/api/data";
+const char* SERVER_URL    = "http://192.168.137.167:8080/api/data";
 
 // ================================================================
 //  PINS

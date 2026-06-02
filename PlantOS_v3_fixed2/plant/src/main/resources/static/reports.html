@@ -6,6 +6,7 @@
 <title>Data Reports - Krishi Drishti</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -384,15 +385,83 @@ function nextPage(){if(currentPage<Math.ceil(reportData.length/pageSize)){curren
 function changePageSize(){pageSize=parseInt(document.getElementById('pageSize').value);currentPage=1;renderPage();}
 
 function exportReport(fmt){
-  var url='/api/report/export/'+fmt+'?period='+currentReportPeriod;
-  if(fmt==='pdf'){
-    fetch(url).then(function(r){if(!r.ok)throw new Error(r.status);return r.blob();})
-      .then(function(b){dl(b,'plant-report.pdf');}).catch(function(e){alert('PDF error: '+e);});
-  }else{
-    fetch(url).then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
-      .then(function(t){dl(new Blob([t],{type:fmt==='csv'?'text/csv':'application/json'}),'plant-report.'+fmt);})
-      .catch(function(e){alert('Export error: '+e);});
+  fetch('/api/report/readings?period='+currentReportPeriod)
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(function(rows){
+      if(!rows || !rows.length){alert('No data to export');return;}
+      if(fmt==='csv'){exportCsvClient(rows);return;}
+      if(fmt==='json'){exportJsonClient(rows);return;}
+      if(fmt==='pdf'){exportPdfClient(rows);return;}
+      alert('Unsupported format: '+fmt);
+    })
+    .catch(function(e){alert('Export error: '+e);});
+}
+
+function exportCsvClient(rows){
+  var lines=['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light (lx),Battery (%)'];
+  rows.forEach(function(row){
+    lines.push([
+      new Date(row.ts).toISOString(),
+      Number(row.temp).toFixed(1),
+      Number(row.humidity).toFixed(0),
+      Number(row.soil).toFixed(0),
+      Number(row.ph).toFixed(2),
+      Number(row.lux).toFixed(0),
+      Number(row.batPct).toFixed(0)
+    ].join(','));
+  });
+  dl(new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'}),'plant-report.csv');
+}
+
+function exportJsonClient(rows){
+  var payload={
+    generatedAt:new Date().toISOString(),
+    period:currentReportPeriod,
+    count:rows.length,
+    readings:rows
+  };
+  dl(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),'plant-report.json');
+}
+
+function exportPdfClient(rows){
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    alert('PDF library not loaded. Refresh and try again.');
+    return;
   }
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({unit:'pt',format:'a4'});
+  var y=40;
+  var pageW=doc.internal.pageSize.getWidth();
+  var lineH=14;
+  var maxRows=65;
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text('Krishi Drishti - '+LABELS[currentReportPeriod]+' Report',40,y); y+=18;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.text('Generated: '+new Date().toLocaleString(),40,y); y+=14;
+  doc.text('Records: '+rows.length,40,y); y+=18;
+  doc.line(40,y,pageW-40,y); y+=14;
+
+  var shown=Math.min(rows.length,maxRows);
+  for(var i=0;i<shown;i++){
+    var r=rows[i];
+    var line=(new Date(r.ts).toLocaleString())+
+      ' | T:'+Number(r.temp).toFixed(1)+'C'+
+      ' H:'+Number(r.humidity).toFixed(0)+'%'+
+      ' Soil:'+Number(r.soil).toFixed(0)+'%'+
+      ' pH:'+Number(r.ph).toFixed(2)+
+      ' Lux:'+Number(r.lux).toFixed(0)+
+      ' Bat:'+Number(r.batPct).toFixed(0)+'%';
+    doc.text(line,40,y);
+    y+=lineH;
+    if(y>790){break;}
+  }
+  if(rows.length>shown){
+    y+=8;
+    doc.text('Showing first '+shown+' rows.',40,y);
+  }
+  doc.save('plant-report.pdf');
 }
 function dl(blob,name){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
