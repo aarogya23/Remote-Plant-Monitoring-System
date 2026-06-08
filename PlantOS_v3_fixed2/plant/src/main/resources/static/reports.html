@@ -1,191 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Data Reports - Krishi Drishti</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f4f6f9;--card:#fff;--border:#e8ecf0;--text:#1a2332;--muted:#7a8694;
-  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--sidebar-w:260px;
-}
-html{overflow-x:hidden}
-body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Data Reports - Krishi Drishti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#f4f6f9;--card:#fff;--border:#e8ecf0;--text:#1a2332;--muted:#7a8694;
+      --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--sidebar-width:260px;
+    }
+    html{overflow-x:hidden}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden}
 
-/* Sidebar */
-.sidebar{width:var(--sidebar-w);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:20;transition:transform .25s ease,box-shadow .25s ease}
-.nav-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s;z-index:15}
-body.nav-open .sidebar{box-shadow:0 18px 48px rgba(15,23,42,.2)}
-body.nav-open .nav-overlay{opacity:1;visibility:visible}
-.logo{display:flex;align-items:center;justify-content:center;padding:20px 18px 18px;border-bottom:1px solid var(--border)}
-.brand-logo{display:block;width:100%;max-width:200px;height:auto;object-fit:contain}
-.nav-section{padding:20px 12px 8px}
-.nav-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:background .15s,color .15s;text-decoration:none}
-.nav-item:hover{background:#f1f5f9;color:var(--text)}
-.nav-item.active{background:#f0fdf4;color:#16a34a;font-weight:600}
-.nav-icon{font-size:15px;width:20px;text-align:center}
-.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
-.device-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)}
-.device-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px #dcfce7;flex-shrink:0}
-.device-name{font-size:12px;font-weight:600}
-.device-status{font-size:11px;color:#22c55e;font-weight:500}
+    /* Sidebar */
+    .sidebar{width:var(--sidebar-width);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:10}
+    .nav-overlay{position:fixed;inset:0;background:rgba(15,23,42,.36);opacity:0;visibility:hidden;transition:opacity .2s ease,visibility .2s ease;z-index:9}
+    .logo{display:flex;align-items:center;justify-content:center;padding:20px 18px 18px;border-bottom:1px solid var(--border)}
+    .brand-logo{display:block;width:100%;max-width:220px;height:auto;object-fit:contain}
+    .nav-section{padding:20px 12px 8px}
+    .nav-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;text-decoration:none}
+    .nav-item:hover{background:#f1f5f9;color:var(--text)}
+    .nav-item.active{background:#f0fdf4;color:#16a34a;font-weight:600}
+    .nav-icon{font-size:15px;width:20px;text-align:center}
+    .sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+    .device-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)}
+    .device-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 3px #dcfce7;flex-shrink:0}
+    .device-name{font-size:12px;font-weight:600}
+    .device-status{font-size:11px;color:#22c55e;font-weight:500}
 
-/* Main layout */
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0}
+    /* Main */
+    .main{margin-left:var(--sidebar-width);flex:1;display:flex;flex-direction:column;min-height:100vh}
 
-/* Mobile nav */
-.mobile-nav{display:none;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
-.mobile-brand .brand-logo{max-width:160px}
-.hamburger-btn{width:40px;height:40px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px}
+    /* Mobile nav */
+    .mobile-nav{display:none;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:8}
+    .mobile-brand{display:flex;align-items:center;min-width:0;flex:1}
+    .mobile-brand .brand-logo{max-width:190px}
+    .hamburger-btn{width:42px;height:42px;border:1px solid var(--border);border-radius:12px;background:#f8fafc;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+    .hamburger-btn span{font-size:20px;line-height:1}
 
-/* Topbar */
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}
-.topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
-.topbar-title p{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+    /* Topbar */
+    .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}
+    .topbar-title h2{font-size:20px;font-weight:700;letter-spacing:-.4px}
+    .topbar-title p{font-size:12px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 
-/* Content */
-.content{padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+    /* Buttons — same .btn system as index.html */
+    .btn{padding:8px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;font-family:var(--font)}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(15,23,42,.08)}
+    .btn-primary{background:#3b82f6;color:#fff}
+    .btn-success{background:#22c55e;color:#fff}
+    .btn-warning{background:#f59e0b;color:#fff}
+    .btn-purple{background:#8b5cf6;color:#fff}
+    .btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
 
-/* Period header */
-.reports-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
-.reports-title h2{font-size:18px;font-weight:700;margin-bottom:4px}
-.reports-title p{font-size:12px;color:var(--muted)}
+    /* Content */
+    .content{padding:24px 28px;display:flex;flex-direction:column;gap:20px}
 
-/* Period buttons */
-.period-btns{display:flex;flex-wrap:wrap;gap:6px;max-width:100%}
-.report-period-btn{padding:7px 13px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--text);transition:background .15s,color .15s,border-color .15s;white-space:nowrap;font-family:var(--font)}
-.report-period-btn:hover{background:#f1f5f9}
+    /* Section header */
+    .section-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+    .section-title h3{font-size:16px;font-weight:700;margin-bottom:3px}
+    .section-title p{font-size:12px;color:var(--muted)}
 
-/* Export buttons */
-.reports-export{display:flex;flex-wrap:wrap;gap:8px}
-.reports-export button{padding:8px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap}
-.reports-export button:nth-child(1){background:#22c55e;color:#fff}
-.reports-export button:nth-child(2){background:#3b82f6;color:#fff}
-.reports-export button:nth-child(3){background:#8b5cf6;color:#fff}
-.reports-export button:nth-child(4){background:#f59e0b;color:#fff}
+    /* Period buttons */
+    .period-btns{display:flex;flex-wrap:wrap;gap:6px}
+    .period-btn{padding:7px 13px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--text);transition:background .15s,color .15s,border-color .15s;white-space:nowrap;font-family:var(--font)}
+    .period-btn:hover{background:#f1f5f9}
+    .period-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
 
-/* Period info */
-.period-info{padding:11px 14px;background:#f0f9ff;border:1px solid #bfdbfe;border-radius:10px;font-size:12px;color:#1d4ed8;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+    /* Export row */
+    .export-row{display:flex;flex-wrap:wrap;gap:8px}
 
-/* Stats cards */
-.cards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.card{background:var(--card);border-radius:14px;padding:16px 18px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
-.card-label{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:4px}
-.card-value{font-size:clamp(20px,3vw,34px);font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;word-break:break-word}
-.card-unit{font-size:13px;font-weight:500;color:var(--muted);margin-left:2px}
+    /* Period info — same style as alert-banner from index.html */
+    .period-info{padding:10px 18px;border-radius:12px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .period-info .record-count{font-size:11px;color:#6b7280;font-weight:500}
 
-/* Table card */
-.chart-card{background:var(--card);border-radius:14px;padding:18px 20px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.chart-title{font-size:15px;font-weight:700;margin-bottom:12px}
-.table-scroll-hint{display:none;font-size:10px;color:var(--muted);text-align:right;margin-bottom:4px;font-style:italic}
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid var(--border)}
-.report-table{width:100%;min-width:620px;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
-.report-table th{padding:10px 12px;text-align:center;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border);background:#f8fafc;white-space:nowrap}
-.report-table th:first-child,.report-table td:first-child{text-align:left}
-.report-table td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
-.report-table tbody tr:last-child td{border-bottom:none}
+    /* Stat cards — same .card as index.html */
+    .cards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .card{background:var(--card);border-radius:14px;padding:18px 20px 14px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
+    .card-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px}
+    .card-value{font-size:clamp(26px,3.5vw,34px);font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;word-break:break-word}
+    .card-unit{font-size:14px;font-weight:500;color:var(--muted);margin-left:2px}
 
-/* Pagination */
-.reports-pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
-.reports-pagination button{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:var(--card);color:var(--text);font-family:var(--font)}
-.reports-pagination button:hover{background:#f1f5f9}
-#pageInfo{font-size:12px;color:var(--muted);min-width:90px;text-align:center}
-.reports-pagination select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);cursor:pointer;background:var(--card);color:var(--text);font-size:12px}
+    /* Table card — same .chart-card as index.html */
+    .chart-card{background:var(--card);border-radius:14px;padding:20px 24px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.04);min-width:0}
+    .chart-title{font-size:15px;font-weight:700}
+    .chart-sub{font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:14px}
+    .scroll-hint{display:none;font-size:10px;color:var(--muted);text-align:right;margin-bottom:6px;font-style:italic}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid var(--border)}
+    .report-table{width:100%;min-width:620px;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+    .report-table th{padding:10px 12px;text-align:center;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border);background:#f8fafc;white-space:nowrap}
+    .report-table th:first-child,.report-table td:first-child{text-align:left}
+    .report-table td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+    .report-table tbody tr:last-child td{border-bottom:none}
+    .report-table tbody tr:hover{background:#f8fafc}
 
-/* ── Responsive ── */
-@media(max-width:960px){
-  .sidebar{transform:translateX(-100%)}
-  body.nav-open .sidebar{transform:translateX(0)}
-  .main{margin-left:0}
-  .mobile-nav{display:flex}
-  .topbar{display:none}
-  .content{padding:16px}
-}
-@media(max-width:700px){
-  .content{padding:14px;gap:14px}
-  .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .card{padding:13px 14px 11px}
-  .reports-header{flex-direction:column;gap:10px}
-  .period-btns{gap:5px}
-  .report-period-btn{padding:7px 10px;font-size:11px}
-  .reports-export button{padding:9px 12px;font-size:12px;flex:1;min-width:60px}
-  .table-scroll-hint{display:block}
-  .report-table{font-size:11px}
-  .report-table th,.report-table td{padding:8px 10px}
-  .chart-card{padding:14px 16px}
-  .period-info{font-size:11px}
-}
-@media(max-width:480px){
-  .content{padding:12px;gap:12px}
-  .mobile-nav{padding:11px 14px}
-  .mobile-brand .brand-logo{max-width:130px}
-  .hamburger-btn{width:38px;height:38px;font-size:16px}
-  .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .card{padding:11px 12px 10px;border-radius:10px}
-  .card-label{font-size:10px}
-  .card-value{font-size:clamp(17px,5vw,22px)}
-  .card-unit{font-size:11px}
-  .reports-title h2{font-size:16px}
-  .reports-title p{font-size:10px}
-  .period-btns{gap:5px}
-  .report-period-btn{flex:1 1 calc(33.333% - 4px);min-width:0;padding:8px 4px;font-size:11px;text-align:center;border-radius:7px}
-  .reports-export{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .reports-export button{padding:10px 8px;font-size:12px;border-radius:8px;flex:unset}
-  .period-info{font-size:10px;padding:9px 11px}
-  .period-count{display:none}
-  .chart-card{padding:12px;border-radius:10px}
-  .chart-title{font-size:13px}
-  .report-table{font-size:10px;min-width:520px}
-  .report-table th,.report-table td{padding:6px 8px}
-  .reports-pagination button{padding:8px 12px;font-size:11px}
-  .reports-pagination select{font-size:11px;padding:7px 8px}
-  #pageInfo{font-size:11px;min-width:70px}
-}
-@media(max-width:360px){
-  .content{padding:10px;gap:10px}
-  .mobile-nav{padding:9px 12px}
-  .mobile-brand .brand-logo{max-width:110px}
-  .card{padding:9px 10px;border-radius:8px}
-  .card-label{font-size:9px}
-  .card-value{font-size:clamp(15px,4.5vw,19px)}
-  .card-unit{font-size:10px}
-  .report-period-btn{font-size:10px;padding:7px 2px}
-  .reports-export button{font-size:11px;padding:9px 6px}
-  .report-table{font-size:9px;min-width:440px}
-  .report-table th,.report-table td{padding:5px 6px}
-  .reports-pagination button{padding:7px 10px;font-size:10px}
-  .reports-pagination select{font-size:10px;padding:6px}
-}
-</style>
+    /* Pagination */
+    .pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
+    .page-info{font-size:12px;color:var(--muted);min-width:90px;text-align:center;font-family:var(--mono)}
+    .page-size-select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);cursor:pointer;background:var(--card);color:var(--text);font-size:12px}
+
+    /* Footer */
+    .ip-footer{text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding-bottom:8px}
+
+    /* Responsive — mirrors index.html breakpoints exactly */
+    @media(max-width:960px){
+      .sidebar{display:flex;transform:translateX(-100%);transition:transform .25s ease,box-shadow .25s ease}
+      body.nav-open .sidebar{transform:translateX(0);box-shadow:0 18px 48px rgba(15,23,42,.18)}
+      body.nav-open .nav-overlay{opacity:1;visibility:visible}
+      .main{margin-left:0}
+      .mobile-nav{display:flex}
+      .topbar,.content{padding-left:20px;padding-right:20px}
+      .cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:640px){
+      .mobile-nav{padding:12px 16px}
+      .topbar{padding:14px 16px}
+      .content{padding:16px}
+      .topbar-title h2{font-size:18px}
+      .mobile-brand .brand-logo{max-width:150px}
+      .cards-grid{grid-template-columns:1fr}
+      .section-header{flex-direction:column;gap:10px}
+      .period-btn{flex:1 1 calc(33.333% - 4px);min-width:0;padding:8px 4px;font-size:11px;text-align:center}
+      .export-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+      .export-row .btn{width:100%}
+      .scroll-hint{display:block}
+      .report-table{font-size:11px}
+      .report-table th,.report-table td{padding:8px 10px}
+      .chart-card{padding:16px}
+    }
+    @media(max-width:420px){
+      .mobile-brand .brand-logo{max-width:132px}
+      .hamburger-btn{width:40px;height:40px;border-radius:10px}
+      .report-table{font-size:10px;min-width:480px}
+      .report-table th,.report-table td{padding:6px 8px}
+    }
+  </style>
 </head>
 <body>
 
 <aside class="sidebar">
   <div class="logo">
-    <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti">
+    <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti logo">
   </div>
   <div class="nav-section">
     <div class="nav-label">Main</div>
-    <a class="nav-item" href="index.html" onclick="closeSidebar()"><span class="nav-icon">⊞</span> Dashboard</a>
-    <a class="nav-item active" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">📈</span> Reports</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">🔔</span> Alerts</a>
+    <a class="nav-item" href="index.html" onclick="closeSidebar()"><span class="nav-icon">&#9783;</span> Dashboard</a>
+    <a class="nav-item active" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">&#128200;</span> Reports</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> Alerts</a>
   </div>
   <div class="nav-section">
     <div class="nav-label">Settings</div>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">⚙️</span> Config</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">🔌</span> Device</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> Config</a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> Device</a>
   </div>
   <div class="sidebar-footer">
     <div class="device-chip">
       <div class="device-dot"></div>
       <div>
         <div class="device-name">ESP32-AGRO</div>
-        <div class="device-status">● Online</div>
+        <div class="device-status">&#8226; Online</div>
       </div>
     </div>
   </div>
@@ -196,61 +173,63 @@ body.nav-open .nav-overlay{opacity:1;visibility:visible}
 <div class="main">
   <div class="mobile-nav">
     <div class="mobile-brand">
-      <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti">
+      <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti logo">
     </div>
-    <button class="hamburger-btn" type="button" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+    <button class="hamburger-btn" type="button" onclick="toggleSidebar()" aria-label="Toggle navigation">
+      <span>&#9776;</span>
+    </button>
   </div>
 
   <div class="topbar">
     <div class="topbar-title">
       <h2>Data Reports</h2>
-      <p>View historical data and analytics</p>
+      <p>View historical sensor data &amp; analytics</p>
     </div>
   </div>
 
   <div class="content">
 
-    <div class="reports-header">
-      <div class="reports-title">
-        <h2>Period Selection</h2>
+    <div class="section-header">
+      <div class="section-title">
+        <h3>Period Selection</h3>
         <p>Choose a time period to view data</p>
       </div>
-      <div class="period-btns">
-        <button onclick="setReportPeriod('today')"        id="btnToday"       class="report-period-btn">Today</button>
-        <button onclick="setReportPeriod('last3days')"    id="btnLast3Days"   class="report-period-btn">3 Days</button>
-        <button onclick="setReportPeriod('week')"         id="btnWeek"        class="report-period-btn">1 Week</button>
-        <button onclick="setReportPeriod('twoweeks')"     id="btnTwoWeeks"    class="report-period-btn">2 Weeks</button>
-        <button onclick="setReportPeriod('month')"        id="btnMonth"       class="report-period-btn">1 Month</button>
-        <button onclick="setReportPeriod('threemonths')"  id="btnThreeMonths" class="report-period-btn">3 Months</button>
-        <button onclick="setReportPeriod('sixmonths')"    id="btnSixMonths"   class="report-period-btn">6 Months</button>
-        <button onclick="setReportPeriod('year')"         id="btnYear"        class="report-period-btn">Yearly</button>
-        <button onclick="setReportPeriod('all')"          id="btnAll"         class="report-period-btn">All Data</button>
+      <div class="period-btns" id="periodBtns">
+        <button class="period-btn" data-period="today">Today</button>
+        <button class="period-btn" data-period="last3days">3 Days</button>
+        <button class="period-btn" data-period="week">1 Week</button>
+        <button class="period-btn" data-period="twoweeks">2 Weeks</button>
+        <button class="period-btn" data-period="month">1 Month</button>
+        <button class="period-btn" data-period="threemonths">3 Months</button>
+        <button class="period-btn" data-period="sixmonths">6 Months</button>
+        <button class="period-btn" data-period="year">Yearly</button>
+        <button class="period-btn" data-period="all">All Data</button>
       </div>
     </div>
 
-    <div class="reports-export">
-      <button onclick="exportReport('csv')">📥 CSV</button>
-      <button onclick="exportReport('json')">📥 JSON</button>
-      <button onclick="exportReport('pdf')">📄 PDF</button>
-      <button onclick="printReport()">🖨️ Print</button>
+    <div class="export-row">
+      <button class="btn btn-success" onclick="exportReport('csv')">&#128229; CSV</button>
+      <button class="btn btn-primary" onclick="exportReport('json')">&#128229; JSON</button>
+      <button class="btn btn-purple" onclick="exportReport('pdf')">&#128196; PDF</button>
+      <button class="btn btn-warning" onclick="printReport()">&#128424; Print</button>
     </div>
 
     <div class="period-info">
-      <span>📊 Showing: <strong id="periodDisplay">Today</strong></span>
-      <span id="dataCountDisplay" class="period-count" style="font-size:11px;color:#6b7280">Loading…</span>
+      <span>&#128202; Showing: <strong id="periodDisplay">Today</strong></span>
+      <span class="record-count" id="dataCountDisplay">Loading&hellip;</span>
     </div>
 
     <div class="cards-grid">
       <div class="card">
         <div class="card-label">Avg Temperature</div>
-        <div><span class="card-value" id="reportAvgTemp">--</span><span class="card-unit">°C</span></div>
+        <div><span class="card-value" id="reportAvgTemp">--</span><span class="card-unit">&deg;C</span></div>
       </div>
       <div class="card">
         <div class="card-label">Avg Humidity</div>
         <div><span class="card-value" id="reportAvgHum" style="color:#3b82f6">--</span><span class="card-unit">%</span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg Soil</div>
+        <div class="card-label">Avg Soil Moisture</div>
         <div><span class="card-value" id="reportAvgSoil" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
       </div>
       <div class="card">
@@ -269,33 +248,29 @@ body.nav-open .nav-overlay{opacity:1;visibility:visible}
 
     <div class="chart-card">
       <div class="chart-title">Historical Data</div>
-      <div class="table-scroll-hint">← swipe to see more columns →</div>
+      <div class="chart-sub">Sensor readings for selected period</div>
+      <div class="scroll-hint">&#8592; swipe to see more columns &#8594;</div>
       <div class="table-wrap">
         <table class="report-table">
           <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Temp (°C)</th>
-              <th>Humidity (%)</th>
-              <th>Soil (%)</th>
-              <th>pH</th>
-              <th>Light (lx)</th>
-              <th>Battery (%)</th>
-              <th>Status</th>
-            </tr>
+          <tr>
+            <th>Timestamp</th><th>Temp (&deg;C)</th><th>Humidity (%)</th>
+            <th>Soil (%)</th><th>pH</th><th>Light (lx)</th>
+            <th>Battery (%)</th><th>Status</th>
+          </tr>
           </thead>
           <tbody id="reportTableBody">
-            <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data available</td></tr>
+          <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data available</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div class="reports-pagination">
-      <button onclick="prevPage()">← Prev</button>
-      <span id="pageInfo">Page --</span>
-      <button onclick="nextPage()">Next →</button>
-      <select id="pageSize" onchange="changePageSize()">
+    <div class="pagination">
+      <button class="btn btn-secondary" onclick="prevPage()">&#8592; Prev</button>
+      <span class="page-info" id="pageInfo">Page --</span>
+      <button class="btn btn-secondary" onclick="nextPage()">Next &#8594;</button>
+      <select class="page-size-select" id="pageSize" onchange="changePageSize()">
         <option value="10">10 / page</option>
         <option value="20">20 / page</option>
         <option value="50">50 / page</option>
@@ -304,188 +279,162 @@ body.nav-open .nav-overlay{opacity:1;visibility:visible}
     </div>
 
   </div>
+
+  <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; Krishi Drishti &nbsp;|&nbsp; http://192.168.4.1</div>
 </div>
 
 <script>
-var currentReportPeriod='today',currentPage=1,pageSize=10,reportData=[];
-var LABELS={today:'Today',last3days:'Last 3 Days',week:'Last 1 Week',twoweeks:'Last 2 Weeks',month:'Last 1 Month',threemonths:'Last 3 Months',sixmonths:'Last 6 Months',year:'Last Year',all:'All Data'};
-var BTN_MAP={today:'btnToday',last3days:'btnLast3Days',week:'btnWeek',twoweeks:'btnTwoWeeks',month:'btnMonth',threemonths:'btnThreeMonths',sixmonths:'btnSixMonths',year:'btnYear',all:'btnAll'};
-
-function toggleSidebar(){document.body.classList.toggle('nav-open')}
-function closeSidebar(){document.body.classList.remove('nav-open')}
-
-function setReportPeriod(p){
-  currentReportPeriod=p;currentPage=1;
-  document.getElementById('periodDisplay').textContent=LABELS[p]||p;
-  updateButtonStates();updateReportDisplay();
-}
-
-function updateButtonStates(){
-  Object.keys(BTN_MAP).forEach(function(p){
-    var b=document.getElementById(BTN_MAP[p]);if(!b)return;
-    var on=p===currentReportPeriod;
-    b.style.background=on?'#3b82f6':'var(--card)';
-    b.style.color=on?'#fff':'var(--text)';
-    b.style.borderColor=on?'#3b82f6':'var(--border)';
-  });
-}
-
-function updateReportDisplay(){updateReportStatistics();updateReportTable();}
-
-function updateReportStatistics(){
-  fetch('/api/report/statistics?period='+currentReportPeriod)
-    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(function(s){
-      function set(id,v,d){document.getElementById(id).textContent=v!==undefined?v.toFixed(d):'--';}
-      set('reportAvgTemp',s.averageTemp,1);set('reportAvgHum',s.averageHumidity,0);
-      set('reportAvgSoil',s.averageSoil,0);set('reportAvgPH',s.averagePh,2);
-      set('reportAvgLux',s.averageLux,0);set('reportAvgBat',s.averageBattery,0);
-      document.getElementById('dataCountDisplay').textContent=(s.count||0)+' records';
-    })
-    .catch(function(){
-      ['reportAvgTemp','reportAvgHum','reportAvgSoil','reportAvgPH','reportAvgLux','reportAvgBat']
-        .forEach(function(id){document.getElementById(id).textContent='--';});
-      document.getElementById('dataCountDisplay').textContent='No data';
-    });
-}
-
-function updateReportTable(){
-  fetch('/api/report/readings?period='+currentReportPeriod)
-    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(function(d){reportData=d;renderPage();})
-    .catch(function(e){
-      document.getElementById('reportTableBody').innerHTML='<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">Backend not reachable — '+e.message+'</td></tr>';
-      document.getElementById('dataCountDisplay').textContent='Error';
-    });
-}
-
-function renderPage(){
-  var tbody=document.getElementById('reportTableBody');tbody.innerHTML='';
-  if(!reportData.length){
-    tbody.innerHTML='<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data for '+LABELS[currentReportPeriod]+'</td></tr>';
-    document.getElementById('pageInfo').textContent='Page --';return;
-  }
-  var slice=reportData.slice((currentPage-1)*pageSize,currentPage*pageSize);
-  slice.forEach(function(row){
-    var s=row.soil<30?'Dry':(row.temp>35||row.temp<15?'Alert':(row.ph>8||row.ph<5?'Warn':'Good'));
-    var sc={Good:'#22c55e',Alert:'#ef4444',Warn:'#f59e0b',Dry:'#f59e0b'}[s];
-    var tr=document.createElement('tr');
-    tr.innerHTML='<td>'+new Date(row.ts).toLocaleString()+'</td>'+
-      '<td>'+row.temp.toFixed(1)+'</td><td>'+row.humidity.toFixed(0)+'</td>'+
-      '<td>'+row.soil.toFixed(0)+'</td><td>'+row.ph.toFixed(2)+'</td>'+
-      '<td>'+row.lux.toFixed(0)+'</td><td>'+row.batPct.toFixed(0)+'</td>'+
-      '<td style="color:'+sc+';font-weight:700">'+s+'</td>';
-    tbody.appendChild(tr);
-  });
-  document.getElementById('pageInfo').textContent='Page '+currentPage+' of '+(Math.ceil(reportData.length/pageSize)||1);
-}
-
-function prevPage(){if(currentPage>1){currentPage--;renderPage();}}
-function nextPage(){if(currentPage<Math.ceil(reportData.length/pageSize)){currentPage++;renderPage();}}
-function changePageSize(){pageSize=parseInt(document.getElementById('pageSize').value);currentPage=1;renderPage();}
-
-function exportReport(fmt){
-  fetch('/api/report/readings?period='+currentReportPeriod)
-    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(function(rows){
-      if(!rows || !rows.length){alert('No data to export');return;}
-      if(fmt==='csv'){exportCsvClient(rows);return;}
-      if(fmt==='json'){exportJsonClient(rows);return;}
-      if(fmt==='pdf'){exportPdfClient(rows);return;}
-      alert('Unsupported format: '+fmt);
-    })
-    .catch(function(e){alert('Export error: '+e);});
-}
-
-function exportCsvClient(rows){
-  var lines=['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light (lx),Battery (%)'];
-  rows.forEach(function(row){
-    lines.push([
-      new Date(row.ts).toISOString(),
-      Number(row.temp).toFixed(1),
-      Number(row.humidity).toFixed(0),
-      Number(row.soil).toFixed(0),
-      Number(row.ph).toFixed(2),
-      Number(row.lux).toFixed(0),
-      Number(row.batPct).toFixed(0)
-    ].join(','));
-  });
-  dl(new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'}),'plant-report.csv');
-}
-
-function exportJsonClient(rows){
-  var payload={
-    generatedAt:new Date().toISOString(),
-    period:currentReportPeriod,
-    count:rows.length,
-    readings:rows
+  const PERIODS = {
+    today:'Today', last3days:'Last 3 Days', week:'Last 1 Week',
+    twoweeks:'Last 2 Weeks', month:'Last 1 Month', threemonths:'Last 3 Months',
+    sixmonths:'Last 6 Months', year:'Last Year', all:'All Data'
   };
-  dl(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),'plant-report.json');
-}
+  const STATUS_COLORS = { Good:'#22c55e', Alert:'#ef4444', Warn:'#f59e0b', Dry:'#f59e0b' };
 
-function exportPdfClient(rows){
-  if(!window.jspdf || !window.jspdf.jsPDF){
-    alert('PDF library not loaded. Refresh and try again.');
-    return;
+  let activePeriod = 'today', currentPage = 1, pageSize = 10, reportData = [];
+
+  function toggleSidebar() { document.body.classList.toggle('nav-open'); }
+  function closeSidebar()  { document.body.classList.remove('nav-open'); }
+  window.addEventListener('resize', () => { if (window.innerWidth > 960) closeSidebar(); });
+
+  document.querySelectorAll('.period-btn').forEach(btn =>
+          btn.addEventListener('click', () => setPeriod(btn.dataset.period))
+  );
+
+  function setPeriod(period) {
+    activePeriod = period; currentPage = 1;
+    document.getElementById('periodDisplay').textContent = PERIODS[period] || period;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+    loadStats(); loadTable();
   }
-  var jsPDF=window.jspdf.jsPDF;
-  var doc=new jsPDF({unit:'pt',format:'a4'});
-  var y=40;
-  var pageW=doc.internal.pageSize.getWidth();
-  var lineH=14;
-  var maxRows=65;
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  doc.text('Krishi Drishti - '+LABELS[currentReportPeriod]+' Report',40,y); y+=18;
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(10);
-  doc.text('Generated: '+new Date().toLocaleString(),40,y); y+=14;
-  doc.text('Records: '+rows.length,40,y); y+=18;
-  doc.line(40,y,pageW-40,y); y+=14;
 
-  var shown=Math.min(rows.length,maxRows);
-  for(var i=0;i<shown;i++){
-    var r=rows[i];
-    var line=(new Date(r.ts).toLocaleString())+
-      ' | T:'+Number(r.temp).toFixed(1)+'C'+
-      ' H:'+Number(r.humidity).toFixed(0)+'%'+
-      ' Soil:'+Number(r.soil).toFixed(0)+'%'+
-      ' pH:'+Number(r.ph).toFixed(2)+
-      ' Lux:'+Number(r.lux).toFixed(0)+
-      ' Bat:'+Number(r.batPct).toFixed(0)+'%';
-    doc.text(line,40,y);
-    y+=lineH;
-    if(y>790){break;}
+  function loadStats() {
+    fetch('/api/report/statistics?period=' + activePeriod)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(s => {
+              const set = (id, v, d) => document.getElementById(id).textContent = v !== undefined ? v.toFixed(d) : '--';
+              set('reportAvgTemp', s.averageTemp, 1); set('reportAvgHum', s.averageHumidity, 0);
+              set('reportAvgSoil', s.averageSoil, 0); set('reportAvgPH', s.averagePh, 2);
+              set('reportAvgLux', s.averageLux, 0);   set('reportAvgBat', s.averageBattery, 0);
+              document.getElementById('dataCountDisplay').textContent = (s.count || 0) + ' records';
+            })
+            .catch(() => {
+              ['reportAvgTemp','reportAvgHum','reportAvgSoil','reportAvgPH','reportAvgLux','reportAvgBat']
+                      .forEach(id => document.getElementById(id).textContent = '--');
+              document.getElementById('dataCountDisplay').textContent = 'No data';
+            });
   }
-  if(rows.length>shown){
-    y+=8;
-    doc.text('Showing first '+shown+' rows.',40,y);
+
+  function loadTable() {
+    fetch('/api/report/readings?period=' + activePeriod)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(data => { reportData = data; renderPage(); })
+            .catch(e => {
+              document.getElementById('reportTableBody').innerHTML =
+                      `<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">Backend not reachable &mdash; ${e.message}</td></tr>`;
+              document.getElementById('dataCountDisplay').textContent = 'Error';
+            });
   }
-  doc.save('plant-report.pdf');
-}
-function dl(blob,name){
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
-}
 
-function printReport(){
-  fetch('/api/report/readings?period='+currentReportPeriod)
-    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
-    .then(function(readings){
-      if(!readings.length){alert('No data to print');return;}
-      var w=window.open('','_blank','height=600,width=900');
-      w.document.write('<html><head><title>Krishi Drishti Report</title><style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}h1{color:#16a34a}</style></head><body>');
-      w.document.write('<h1>Krishi Drishti — '+LABELS[currentReportPeriod]+' Report</h1>');
-      w.document.write('<p>Generated: '+new Date().toLocaleString()+' | Records: '+readings.length+'</p>');
-      w.document.write('<table><tr><th>Timestamp</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>pH</th><th>Light</th><th>Battery</th></tr>');
-      readings.forEach(function(row){
-        w.document.write('<tr><td>'+new Date(row.ts).toLocaleString()+'</td><td>'+row.temp.toFixed(1)+'</td><td>'+row.humidity.toFixed(0)+'</td><td>'+row.soil.toFixed(0)+'</td><td>'+row.ph.toFixed(2)+'</td><td>'+row.lux.toFixed(0)+'</td><td>'+row.batPct.toFixed(0)+'</td></tr>');
-      });
-      w.document.write('</table></body></html>');w.document.close();w.print();
-    }).catch(function(e){alert('Print error: '+e);});
-}
+  function getStatus(row) {
+    if (row.soil < 30)                  return 'Dry';
+    if (row.temp > 35 || row.temp < 15) return 'Alert';
+    if (row.ph   > 8  || row.ph   < 5)  return 'Warn';
+    return 'Good';
+  }
 
-window.addEventListener('DOMContentLoaded',function(){updateButtonStates();updateReportDisplay();});
+  function renderPage() {
+    const tbody = document.getElementById('reportTableBody');
+    const info  = document.getElementById('pageInfo');
+    tbody.innerHTML = '';
+    if (!reportData.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data for ${PERIODS[activePeriod]}</td></tr>`;
+      info.textContent = 'Page --'; return;
+    }
+    const total = Math.ceil(reportData.length / pageSize) || 1;
+    reportData.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(row => {
+      const s = getStatus(row);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${new Date(row.ts).toLocaleString()}</td>
+      <td>${(+row.temp).toFixed(1)}</td><td>${(+row.humidity).toFixed(0)}</td>
+      <td>${(+row.soil).toFixed(0)}</td><td>${(+row.ph).toFixed(2)}</td>
+      <td>${(+row.lux).toFixed(0)}</td><td>${(+row.batPct).toFixed(0)}</td>
+      <td style="color:${STATUS_COLORS[s]};font-weight:700">${s}</td>`;
+      tbody.appendChild(tr);
+    });
+    info.textContent = `Page ${currentPage} of ${total}`;
+  }
+
+  function prevPage()       { if (currentPage > 1) { currentPage--; renderPage(); } }
+  function nextPage()       { if (currentPage < Math.ceil(reportData.length / pageSize)) { currentPage++; renderPage(); } }
+  function changePageSize() { pageSize = parseInt(document.getElementById('pageSize').value); currentPage = 1; renderPage(); }
+
+  function exportReport(fmt) {
+    fetch('/api/report/readings?period=' + activePeriod)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(rows => {
+              if (!rows?.length) { alert('No data to export'); return; }
+              if (fmt === 'csv')  exportCsv(rows);
+              if (fmt === 'json') exportJson(rows);
+              if (fmt === 'pdf')  exportPdf(rows);
+            })
+            .catch(e => alert('Export error: ' + e));
+  }
+
+  function exportCsv(rows) {
+    const lines = ['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light (lx),Battery (%)'];
+    rows.forEach(r => lines.push([new Date(r.ts).toISOString(),(+r.temp).toFixed(1),(+r.humidity).toFixed(0),(+r.soil).toFixed(0),(+r.ph).toFixed(2),(+r.lux).toFixed(0),(+r.batPct).toFixed(0)].join(',')));
+    dl(new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'}), 'plant-report.csv');
+  }
+
+  function exportJson(rows) {
+    dl(new Blob([JSON.stringify({generatedAt:new Date().toISOString(),period:activePeriod,count:rows.length,readings:rows},null,2)],{type:'application/json'}), 'plant-report.json');
+  }
+
+  function exportPdf(rows) {
+    if (!window.jspdf?.jsPDF) { alert('PDF library not loaded. Refresh and try again.'); return; }
+    const doc = new window.jspdf.jsPDF({unit:'pt',format:'a4'});
+    const pageW = doc.internal.pageSize.getWidth(); let y = 40;
+    doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('Krishi Drishti \u2014 ' + PERIODS[activePeriod] + ' Report', 40, y); y += 18;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text('Generated: ' + new Date().toLocaleString(), 40, y); y += 14;
+    doc.text('Records: ' + rows.length, 40, y); y += 18;
+    doc.line(40, y, pageW - 40, y); y += 14;
+    const shown = Math.min(rows.length, 65);
+    for (let i = 0; i < shown; i++) {
+      const r = rows[i];
+      doc.text(`${new Date(r.ts).toLocaleString()} | T:${(+r.temp).toFixed(1)}C H:${(+r.humidity).toFixed(0)}% Soil:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} Lux:${(+r.lux).toFixed(0)} Bat:${(+r.batPct).toFixed(0)}%`, 40, y);
+      y += 14; if (y > 790) break;
+    }
+    if (rows.length > shown) { y += 8; doc.text(`Showing first ${shown} rows.`, 40, y); }
+    doc.save('plant-report.pdf');
+  }
+
+  function printReport() {
+    fetch('/api/report/readings?period=' + activePeriod)
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(rows => {
+              if (!rows.length) { alert('No data to print'); return; }
+              const w = window.open('','_blank','height=600,width=900');
+              w.document.write(`<html><head><title>Krishi Drishti Report</title>
+        <style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}h1{color:#16a34a}</style>
+        </head><body><h1>Krishi Drishti \u2014 ${PERIODS[activePeriod]} Report</h1>
+        <p>Generated: ${new Date().toLocaleString()} | Records: ${rows.length}</p>
+        <table><tr><th>Timestamp</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>pH</th><th>Light</th><th>Battery</th></tr>
+        ${rows.map(r=>`<tr><td>${new Date(r.ts).toLocaleString()}</td><td>${(+r.temp).toFixed(1)}</td><td>${(+r.humidity).toFixed(0)}</td><td>${(+r.soil).toFixed(0)}</td><td>${(+r.ph).toFixed(2)}</td><td>${(+r.lux).toFixed(0)}</td><td>${(+r.batPct).toFixed(0)}</td></tr>`).join('')}
+        </table></body></html>`);
+              w.document.close(); w.print();
+            })
+            .catch(e => alert('Print error: ' + e));
+  }
+
+  function dl(blob, name) {
+    const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob),download:name});
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setPeriod('today'));
 </script>
 </body>
 </html>
