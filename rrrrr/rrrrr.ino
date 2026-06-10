@@ -1,7 +1,6 @@
 // ================================================================
-//  Krishi Drishti v3 — BH1750 DISABLED
-//  Light status now derived from TEMPERATURE only
-//  All other sensors remain the same
+//  Krishi Drishti v4 — Light status derived from temperature
+//  Light = warm, Bright = cool (BH1750 bypassed)
 // ================================================================
 
 #include <DHT.h>
@@ -34,7 +33,6 @@ TwoWire I2C_BUS2 = TwoWire(1);
 
 DHT               dht(DHT_PIN, DHT_TYPE);
 LiquidCrystal_I2C lcd1(0x27, 16, 2);
-LiquidCrystal_I2C lcd2(0x27, 16, 2);
 
 // ================================================================
 //  CALIBRATION
@@ -58,9 +56,8 @@ float  g_batVoltage  = 0;
 int    g_batPercent  = 0;
 String g_soilStatus  = "---";
 String g_tempStatus  = "---";
-String g_lightStatus = "---";   // derived from temp
-String g_lightAdvice = "---";   // advice based on temp
-String g_lightDetail = "---";   // extra detail
+String g_lightStatus = "---";
+String g_lightAdvice = "---";
 String g_phStatus    = "---";
 String g_batStatus   = "---";
 
@@ -89,11 +86,7 @@ const unsigned long TEMP_ALERT_INTERVAL = 60000;
 // ================================================================
 int readAverage(byte pin) {
   long total = 0;
-  for (byte i = 0; i < SAMPLE_COUNT; i++) { 
-    
-    total += analogRead(pin); delay(5); 
-    
-    }
+  for (byte i = 0; i < SAMPLE_COUNT; i++) { total += analogRead(pin); delay(5); }
   return total / SAMPLE_COUNT;
 }
 void beep(int f, int ms) { tone(BUZZER_PIN, f); delay(ms); noTone(BUZZER_PIN); }
@@ -131,8 +124,8 @@ void lcd2_send(uint8_t value, uint8_t mode) {
   lcd2_write4bits(hi);
   lcd2_write4bits(lo);
 }
-void lcd2_cmd(uint8_t cmd) { lcd2_send(cmd, 0);     delayMicroseconds(2000); }
-void lcd2_char(uint8_t ch) { lcd2_send(ch, LCD_RS); delayMicroseconds(50);   }
+void lcd2_cmd(uint8_t cmd)  { lcd2_send(cmd, 0);     delayMicroseconds(2000); }
+void lcd2_char(uint8_t ch)  { lcd2_send(ch, LCD_RS); delayMicroseconds(50);   }
 void lcd2_init() {
   delay(50);
   lcd2_write4bits(0x30); delay(5);
@@ -168,77 +161,16 @@ void readBattery() {
 }
 
 // ================================================================
-//  LIGHT STATUS DERIVED FROM TEMPERATURE
-//
-//  Logic: Temperature tells us what time of day / season it is
-//  and what kind of light environment the plant is likely in
-//
-//  < 5°C    = Freezing dark / winter night
-//  5–10°C   = Cold dark / early morning
-//  10–15°C  = Cool / low morning light
-//  15–20°C  = Cool bright / morning sun
-//  20–25°C  = Ideal / bright indirect
-//  25–30°C  = Warm / good sunlight
-//  30–35°C  = Hot / strong direct sun
-//  35–40°C  = Very hot / intense sun
-//  > 40°C   = Extreme / dangerous heat
+//  LIGHT STATUS FROM TEMPERATURE
+//  >= 20C = Light, < 20C = Bright
 // ================================================================
 void calcLightFromTemp() {
-
-  if (g_temp < 5) {
-    g_lightStatus = "Dark";
-    g_lightAdvice = "Freezing & Dark";
-    g_lightDetail = "Move inside now!";
-  }
-  else if (g_temp < 10) {
-    g_lightStatus = "Very Dark";
-    g_lightAdvice = "Cold & Dark";
-    g_lightDetail = "Needs warmth+light";
-  }
-  else if (g_temp < 15) {
-    g_lightStatus = "Low Light";
-    g_lightAdvice = "Cool,low light";
-    g_lightDetail = "Move to window";
-  }
-  else if (g_temp < 18) {
-    g_lightStatus = "Dim Light";
-    g_lightAdvice = "Cool & Dim";
-    g_lightDetail = "Shade plants OK";
-  }
-  else if (g_temp < 22) {
-    g_lightStatus = "Moderate";
-    g_lightAdvice = "Good temperature";
-    g_lightDetail = "Most plants happy";
-  }
-  else if (g_temp < 26) {
-    g_lightStatus = "Bright Indirect";
-    g_lightAdvice = "PERFECT!";
-    g_lightDetail = "Ideal conditions";
-  }
-  else if (g_temp < 30) {
+  if (g_temp >= 20) {
+    g_lightStatus = "Light";
+    g_lightAdvice = "Good sunlight!";
+  } else {
     g_lightStatus = "Bright";
-    g_lightAdvice = "Warm & Bright";
-    g_lightDetail = "Veggies thrive!";
-  }
-  else if (g_temp < 33) {
-    g_lightStatus = "Very Bright";
-    g_lightAdvice = "Hot & Bright";
-    g_lightDetail = "Water more often";
-  }
-  else if (g_temp < 37) {
-    g_lightStatus = "Strong Sun";
-    g_lightAdvice = "Too hot+bright";
-    g_lightDetail = "Shield from sun!";
-  }
-  else if (g_temp < 40) {
-    g_lightStatus = "Intense Sun";
-    g_lightAdvice = "Danger: Very Hot";
-    g_lightDetail = "Move to shade!";
-  }
-  else {
-    g_lightStatus = "Extreme Heat";
-    g_lightAdvice = "DANGER: >40C!";
-    g_lightDetail = "Emergency! Cool!";
+    g_lightAdvice = "Low light";
   }
 }
 
@@ -255,7 +187,7 @@ int calcHealth() {
   if      (g_temp < 5  || g_temp > 40)  s -= 35;
   else if (g_temp < 10 || g_temp > 37)  s -= 25;
   else if (g_temp < 15 || g_temp > 33)  s -= 15;
-  else if (g_temp >= 22 && g_temp < 26) s +=  5; // bonus for perfect temp
+  else if (g_temp >= 22 && g_temp < 26) s +=  5;
   if      (g_humidity < 20 || g_humidity > 90) s -= 20;
   else if (g_humidity < 30 || g_humidity > 80) s -=  8;
   if (g_batPercent < 10) s -= 15;
@@ -263,9 +195,9 @@ int calcHealth() {
 }
 
 // ================================================================
-//  LCD1 — pH & Light (derived from temp)
+//  LCD1 — pH & Light
 //  Line 1: "pH:6.82 Neutral "
-//  Line 2: "Bright Indirect "
+//  Line 2: "Light           "
 // ================================================================
 void updateLCD1() {
   lcd1.clear();
@@ -283,15 +215,7 @@ void updateLCD1() {
 }
 
 // ================================================================
-//  LCD2 — Soil/Env ↔ Light Advice
-//
-//  Sub-page 0:
-//    Line 1: "Soil:65%  Moist "
-//    Line 2: "T:28.4C  H:65%  "
-//
-//  Sub-page 1:
-//    Line 1: light advice  e.g. "PERFECT!"
-//    Line 2: light detail  e.g. "Ideal conditions"
+//  LCD2 — Soil/Env  ↔  Light Advice
 // ================================================================
 void updateLCD2() {
   lcd2_clear();
@@ -316,7 +240,9 @@ void updateLCD2() {
     lcd2_setCursor(0, 0);
     lcd2_print(line1.substring(0, 16));
 
-    String line2 = g_lightDetail;
+    String line2 = "Temp: ";
+    line2 += String(g_temp, 1);
+    line2 += "C";
     while (line2.length() < 16) line2 += " ";
     lcd2_setCursor(0, 1);
     lcd2_print(line2.substring(0, 16));
@@ -324,8 +250,7 @@ void updateLCD2() {
 }
 
 // ================================================================
-//  JSON — includes lightStatus, lightAdvice, lightDetail
-//  lux sent as 0 since BH1750 is disabled
+//  JSON
 // ================================================================
 String buildSensorJson() {
   String j = "{";
@@ -333,7 +258,7 @@ String buildSensorJson() {
   j += "\"humidity\":"       + String(g_humidity, 1)   + ",";
   j += "\"soil\":"           + String(g_soilPercent)   + ",";
   j += "\"ph\":"             + String(g_pH, 2)         + ",";
-  j += "\"lux\":"            + String(0)               + ",";  // BH1750 offline
+  j += "\"lux\":"            + String(0)               + ",";
   j += "\"batV\":"           + String(g_batVoltage, 2) + ",";
   j += "\"batPct\":"         + String(g_batPercent)    + ",";
   j += "\"health\":"         + String(calcHealth())    + ",";
@@ -342,9 +267,8 @@ String buildSensorJson() {
   j += "\"tempStatus\":\""   + g_tempStatus            + "\",";
   j += "\"lightStatus\":\""  + g_lightStatus           + "\",";
   j += "\"lightAdvice\":\""  + g_lightAdvice           + "\",";
-  j += "\"lightDetail\":\""  + g_lightDetail           + "\",";
   j += "\"batStatus\":\""    + g_batStatus             + "\",";
-  j += "\"lightSource\":\"temp_derived\"";  // tells backend BH1750 is offline
+  j += "\"lightSource\":\"temp_derived\"";
   j += "}";
   return j;
 }
@@ -377,9 +301,6 @@ void setup() {
 
   dht.begin();
 
-  // BH1750 is disabled — no lightMeter.begin()
-  Serial.println("[INFO] BH1750 disabled. Light derived from temperature.");
-
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_PIN,    OUTPUT);
 
@@ -404,7 +325,7 @@ void setup() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
 
-  Serial.println("\n=== Krishi Drishti v3 (BH1750 offline) ===");
+  Serial.println("\n=== Krishi Drishti v4 (temp-derived light) ===");
   Serial.print("IP: "); Serial.println(WiFi.localIP());
 
   lcd1.clear();
@@ -475,7 +396,7 @@ void loop() {
     else if (g_temp < 35) g_tempStatus = "Hot";
     else                   g_tempStatus = "Very Hot";
 
-    // Light derived from temperature
+    // Light from temperature
     calcLightFromTemp();
 
     // Alerts
@@ -506,7 +427,6 @@ void loop() {
       g_lightStatus.c_str(),
       g_batPercent, g_batStatus.c_str()
     );
-    Serial.printf("  Light: %s | %s\n", g_lightAdvice.c_str(), g_lightDetail.c_str());
 
     sendViaWiFi();
   }
