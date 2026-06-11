@@ -91,7 +91,7 @@ public class PlantosController {
     reading.setHumidity(50 + Math.random() * 20);
     reading.setSoil(45 + (int)(Math.random() * 20));
     reading.setPh(6.5 + Math.random() * 1);
-    reading.setLux(5000 + Math.random() * 15000);
+    reading.setLux(Math.random() > 0.5 ? 1.0 : 0.0);
     reading.setBatV(7.8 + Math.random() * 0.4);
     reading.setBatPct(75 + (int)(Math.random() * 25));
     reading.setHealth(80 + (int)(Math.random() * 20));

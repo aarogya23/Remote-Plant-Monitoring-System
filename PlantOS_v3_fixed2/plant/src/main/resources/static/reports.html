@@ -238,7 +238,7 @@
       </div>
       <div class="card">
         <div class="card-label">Avg Light</div>
-        <div><span class="card-value" id="reportAvgLux" style="color:#f59e0b">--</span><span class="card-unit">lx</span></div>
+        <div><span class="card-value" id="reportAvgLux" style="color:#f59e0b">--</span><span class="card-unit" id="reportAvgLuxUnit"></span></div>
       </div>
       <div class="card">
         <div class="card-label">Avg Battery</div>
@@ -255,7 +255,7 @@
           <thead>
           <tr>
             <th>Timestamp</th><th>Temp (&deg;C)</th><th>Humidity (%)</th>
-            <th>Soil (%)</th><th>pH</th><th>Light (lx)</th>
+            <th>Soil (%)</th><th>pH</th><th>Light</th>
             <th>Battery (%)</th><th>Status</th>
           </tr>
           </thead>
@@ -315,7 +315,7 @@
               const set = (id, v, d) => document.getElementById(id).textContent = v !== undefined ? v.toFixed(d) : '--';
               set('reportAvgTemp', s.averageTemp, 1); set('reportAvgHum', s.averageHumidity, 0);
               set('reportAvgSoil', s.averageSoil, 0); set('reportAvgPH', s.averagePh, 2);
-              set('reportAvgLux', s.averageLux, 0);   set('reportAvgBat', s.averageBattery, 0);
+              set('reportAvgLux', s.averageLux, 1);   set('reportAvgBat', s.averageBattery, 0);
               document.getElementById('dataCountDisplay').textContent = (s.count || 0) + ' records';
             })
             .catch(() => {
@@ -355,10 +355,11 @@
     reportData.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(row => {
       const s = getStatus(row);
       const tr = document.createElement('tr');
+      const irText = row.lux === 1 ? 'Light' : 'Dark';
       tr.innerHTML = `<td>${new Date(row.ts).toLocaleString()}</td>
       <td>${(+row.temp).toFixed(1)}</td><td>${(+row.humidity).toFixed(0)}</td>
       <td>${(+row.soil).toFixed(0)}</td><td>${(+row.ph).toFixed(2)}</td>
-      <td>${(+row.lux).toFixed(0)}</td><td>${(+row.batPct).toFixed(0)}</td>
+      <td>${irText}</td><td>${(+row.batPct).toFixed(0)}</td>
       <td style="color:${STATUS_COLORS[s]};font-weight:700">${s}</td>`;
       tbody.appendChild(tr);
     });
@@ -382,8 +383,8 @@
   }
 
   function exportCsv(rows) {
-    const lines = ['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light (lx),Battery (%)'];
-    rows.forEach(r => lines.push([new Date(r.ts).toISOString(),(+r.temp).toFixed(1),(+r.humidity).toFixed(0),(+r.soil).toFixed(0),(+r.ph).toFixed(2),(+r.lux).toFixed(0),(+r.batPct).toFixed(0)].join(',')));
+    const lines = ['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light,Battery (%)'];
+    rows.forEach(r => lines.push([new Date(r.ts).toISOString(),(+r.temp).toFixed(1),(+r.humidity).toFixed(0),(+r.soil).toFixed(0),(+r.ph).toFixed(2),r.lux===1?'Light':'Dark',(+r.batPct).toFixed(0)].join(',')));
     dl(new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'}), 'plant-report.csv');
   }
 
@@ -404,7 +405,7 @@
     const shown = Math.min(rows.length, 65);
     for (let i = 0; i < shown; i++) {
       const r = rows[i];
-      doc.text(`${new Date(r.ts).toLocaleString()} | T:${(+r.temp).toFixed(1)}C H:${(+r.humidity).toFixed(0)}% Soil:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} Lux:${(+r.lux).toFixed(0)} Bat:${(+r.batPct).toFixed(0)}%`, 40, y);
+      doc.text(`${new Date(r.ts).toLocaleString()} | T:${(+r.temp).toFixed(1)}C H:${(+r.humidity).toFixed(0)}% Soil:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} Light:${r.lux===1?'Light':'Dark'} Bat:${(+r.batPct).toFixed(0)}%`, 40, y);
       y += 14; if (y > 790) break;
     }
     if (rows.length > shown) { y += 8; doc.text(`Showing first ${shown} rows.`, 40, y); }
@@ -422,7 +423,7 @@
         </head><body><h1>Krishi Drishti \u2014 ${PERIODS[activePeriod]} Report</h1>
         <p>Generated: ${new Date().toLocaleString()} | Records: ${rows.length}</p>
         <table><tr><th>Timestamp</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>pH</th><th>Light</th><th>Battery</th></tr>
-        ${rows.map(r=>`<tr><td>${new Date(r.ts).toLocaleString()}</td><td>${(+r.temp).toFixed(1)}</td><td>${(+r.humidity).toFixed(0)}</td><td>${(+r.soil).toFixed(0)}</td><td>${(+r.ph).toFixed(2)}</td><td>${(+r.lux).toFixed(0)}</td><td>${(+r.batPct).toFixed(0)}</td></tr>`).join('')}
+        ${rows.map(r=>`<tr><td>${new Date(r.ts).toLocaleString()}</td><td>${(+r.temp).toFixed(1)}</td><td>${(+r.humidity).toFixed(0)}</td><td>${(+r.soil).toFixed(0)}</td><td>${(+r.ph).toFixed(2)}</td><td>${r.lux===1?'Light':'Dark'}</td><td>${(+r.batPct).toFixed(0)}</td></tr>`).join('')}
         </table></body></html>`);
               w.document.close(); w.print();
             })

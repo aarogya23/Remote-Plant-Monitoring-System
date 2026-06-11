@@ -28,7 +28,7 @@ const char* SERVER_URL    = "http://10.173.109.184:8080/api/data";
 #define BAT_PIN     33
 #define LCD2_SDA    25
 #define LCD2_SCL    26
-#define LDR_PIN      2
+#define IR_PIN      2
 
 TwoWire I2C_BUS2 = TwoWire(1);
 
@@ -55,7 +55,7 @@ float  g_temp = 0, g_humidity = 0, g_pH = 0;
 int    g_soilPercent = 0, g_soilRaw = 0;
 float  g_batVoltage  = 0;
 int    g_batPercent  = 0;
-bool   g_ldrLight    = false;
+bool   g_irObstacle  = false;
 String g_soilStatus  = "---";
 String g_tempStatus  = "---";
 String g_lightStatus = "---";
@@ -168,18 +168,18 @@ void readBattery() {
 //  DO=HIGH = dark / no light → "Dark"
 //  If readings are inverted, swap LOW/HIGH below
 // ================================================================
-void calcLightFromLDR() {
-  int val = digitalRead(LDR_PIN);
-  Serial.printf("[LDR] raw: %d\n", val);
+void readIRSensor() {
+  int val = digitalRead(IR_PIN);
+  Serial.printf("[IR] raw: %d\n", val);
 
   if (val == LOW) {
-    g_ldrLight    = true;
-    g_lightStatus = "Light";
-    g_lightAdvice = "Good sunlight!";
+    g_irObstacle  = true;
+    g_lightStatus = "Near";
+    g_lightAdvice = "Object Detected";
   } else {
-    g_ldrLight    = false;
-    g_lightStatus = "Dark";
-    g_lightAdvice = "Low light";
+    g_irObstacle  = false;
+    g_lightStatus = "Clear";
+    g_lightAdvice = "All Clear";
   }
 }
 
@@ -199,7 +199,7 @@ int calcHealth() {
   else if (g_temp >= 22 && g_temp < 26) s +=  5;
   if      (g_humidity < 20 || g_humidity > 90) s -= 20;
   else if (g_humidity < 30 || g_humidity > 80) s -=  8;
-  if (!g_ldrLight)     s -= 10;
+  if (g_irObstacle)     s -= 10;
   if (g_batPercent < 10) s -= 15;
   return constrain(s, 0, 100);
 }
@@ -250,7 +250,7 @@ void updateLCD2() {
     lcd2_setCursor(0, 0);
     lcd2_print(line1.substring(0, 16));
 
-    String line2 = "LDR: ";
+    String line2 = "IR: ";
     line2 += g_lightStatus;
     while (line2.length() < 16) line2 += " ";
     lcd2_setCursor(0, 1);
@@ -267,7 +267,7 @@ String buildSensorJson() {
   j += "\"humidity\":"       + String(g_humidity, 1)     + ",";
   j += "\"soil\":"           + String(g_soilPercent)     + ",";
   j += "\"ph\":"             + String(g_pH, 2)           + ",";
-  j += "\"lux\":"            + String(g_ldrLight ? 1 : 0) + ",";
+  j += "\"lux\":"            + String(g_irObstacle ? 1 : 0) + ",";
   j += "\"batV\":"           + String(g_batVoltage, 2)   + ",";
   j += "\"batPct\":"         + String(g_batPercent)      + ",";
   j += "\"health\":"         + String(calcHealth())      + ",";
@@ -277,7 +277,7 @@ String buildSensorJson() {
   j += "\"lightStatus\":\""  + g_lightStatus             + "\",";
   j += "\"lightAdvice\":\""  + g_lightAdvice             + "\",";
   j += "\"batStatus\":\""    + g_batStatus               + "\",";
-  j += "\"lightSource\":\"LDR\"";
+  j += "\"sensorType\":\"IR\"";
   j += "}";
   return j;
 }
@@ -312,7 +312,7 @@ void setup() {
 
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LED_PIN,    OUTPUT);
-  pinMode(LDR_PIN,    INPUT);
+  pinMode(IR_PIN,    INPUT);
 
   lcd1.init();
   lcd1.backlight();
@@ -385,7 +385,7 @@ void loop() {
     else Serial.println("[WARN] DHT22 read failed");
 
     // LDR
-    calcLightFromLDR();
+    readIRSensor();
 
     // Battery
     readBattery();
@@ -430,7 +430,7 @@ void loop() {
 
     // Serial output
     Serial.printf(
-      "Soil:%d%% [%s] | pH:%.2f [%s] | T:%.1fC [%s] H:%.1f%% | LDR:[%s] | Bat:%d%% [%s]\n",
+      "Soil:%d%% [%s] | pH:%.2f [%s] | T:%.1fC [%s] H:%.1f%% | IR:[%s] | Bat:%d%% [%s]\n",
       g_soilPercent, g_soilStatus.c_str(),
       g_pH, g_phStatus.c_str(),
       g_temp, g_tempStatus.c_str(), g_humidity,

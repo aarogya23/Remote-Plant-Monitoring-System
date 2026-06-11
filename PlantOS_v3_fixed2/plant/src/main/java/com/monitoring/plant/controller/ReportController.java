@@ -124,7 +124,7 @@ public class ReportController {
       @RequestParam(value = "period", defaultValue = "all") String period) {
     List<SensorReading> readings = reportService.getReadingsByPeriod(period);
     StringBuilder csv = new StringBuilder();
-    csv.append("Timestamp,Temperature (C),Humidity (%),Soil Moisture (%),pH,Light (lx),Battery (%)").append("\n");
+    csv.append("Timestamp,Temperature (C),Humidity (%),Soil Moisture (%),pH,IR Proximity,Battery (%)").append("\n");
 
     for (SensorReading reading : readings) {
       csv.append(reading.getTs()).append(",")
@@ -181,7 +181,7 @@ public class ReportController {
       SensorReading r = rows.get(i);
       String line = String.format(
           Locale.US,
-          "%s | T=%.1fC H=%.0f%% Soil=%d%% pH=%.2f Lux=%.0f Bat=%d%%",
+          "%s | T=%.1fC H=%.0f%% Soil=%d%% pH=%.2f IR=%.0f Bat=%d%%",
           r.getTs(), r.getTemp(), r.getHumidity(), r.getSoil(), r.getPh(), r.getLux(), r.getBatPct()
       );
       text.append("BT /F1 8 Tf 50 ").append(y).append(" Td (").append(escapePdf(line)).append(") Tj ET\n");

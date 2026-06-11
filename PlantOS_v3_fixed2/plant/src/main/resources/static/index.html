@@ -256,15 +256,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#9728;</div>
-          <span class="card-delta" id="lightStatus" style="color:#f59e0b">--</span>
+          <span class="card-delta" id="lightStatus" style="color:#22c55e">--</span>
         </div>
-        <div class="card-label">Light (BH1750)</div>
-        <div><span class="card-value" id="luxVal" style="color:#f59e0b">--</span><span class="card-unit">lx</span></div>
-        <div class="card-bar-track"><div class="card-bar-fill" id="luxBar" style="width:0%;background:#f59e0b"></div></div>
+        <div class="card-label">Light (IR Sensor)</div>
+        <div><span class="card-value" id="luxVal" style="color:#22c55e">--</span><span class="card-unit" id="luxUnit"></span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="luxBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
-          <div class="status-dot" id="luxDot" style="background:#f59e0b"></div>
-          <span id="luxSubStatus" style="color:#f59e0b">--</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;500&#8211;20k lx ideal</span>
+          <div class="status-dot" id="luxDot" style="background:#22c55e"></div>
+          <span id="luxSubStatus" style="color:#22c55e">--</span>
+          <span style="color:var(--muted);font-weight:400">&nbsp;Light detection</span>
         </div>
       </div>
       <div class="card">
@@ -305,7 +305,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Humidity (%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Soil (%)</div>
           <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> pH</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Light (klx)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Light</div>
         </div>
       </div>
 
@@ -356,8 +356,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="metric-row">
             <span class="metric-icon">&#9728;</span>
             <span class="metric-name">Light</span>
-            <div class="metric-bar"><div class="metric-bar-fill" id="mLuxBar" style="width:0%;background:#f59e0b"></div></div>
-            <span class="metric-val" id="mLuxVal">-- lx</span>
+            <div class="metric-bar"><div class="metric-bar-fill" id="mLuxBar" style="width:0%;background:#22c55e"></div></div>
+            <span class="metric-val" id="mLuxVal">--</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#128267;</span>
@@ -384,18 +384,13 @@ function colorFor(type,val){
   if(type==='hum')    return (val<30||val>80)?'#f59e0b':'#3b82f6';
   if(type==='soil')   return val<30?'#ef4444':val<40?'#f59e0b':'#22c55e';
   if(type==='ph')     return (val<5.0||val>8.0)?'#ef4444':(val<5.5||val>7.5)?'#f59e0b':'#22c55e';
-  if(type==='lux')    return val<100?'#ef4444':val<500?'#f59e0b':'#22c55e';
+  if(type==='lux')    return val===1?'#22c55e':'#ef4444';
   if(type==='bat')    return val<30?'#ef4444':val<70?'#f59e0b':'#22c55e';
   if(type==='health') return val>=75?'#22c55e':val>=50?'#f59e0b':'#ef4444';
   return '#22c55e';
 }
 function luxLabel(v){
-  if(v<100)   return 'Very dark';
-  if(v<500)   return 'Dim';
-  if(v<2000)  return 'Indoor';
-  if(v<10000) return 'Bright';
-  if(v<50000) return 'Sunny';
-  return 'Intense';
+  return v===1?'Light':'Dark';
 }
 function setColor(el,c){el.style.color=c;}
 function flash(el){el.classList.remove('updated');void el.offsetWidth;el.classList.add('updated');}
@@ -429,7 +424,7 @@ function pts(data,lo,hi){
   return s.trim();
 }
 function pushChart(t,h,s,ph,lux){
-  tD.push(t);hD.push(h);sD.push(s);pD.push(ph);lD.push(lux/1000);
+  tD.push(t);hD.push(h);sD.push(s);pD.push(ph);lD.push(lux*80);
   if(tD.length>MAX){tD.shift();hD.shift();sD.shift();pD.shift();lD.shift();}
   document.getElementById('tempLine').setAttribute('points',pts(tD,0,60));
   document.getElementById('humLine').setAttribute('points',pts(hD,0,100));
@@ -473,11 +468,11 @@ function applyData(d){
   document.getElementById('phDot').style.background=pc;
 
   var lv=document.getElementById('luxVal');
-  lv.textContent=d.lux;setColor(lv,lc);flash(lv);
   var ll=luxLabel(d.lux);
-  document.getElementById('lightStatus').textContent=d.lightStatus||ll;setColor(document.getElementById('lightStatus'),lc);
-  document.getElementById('luxSubStatus').textContent=ll;setColor(document.getElementById('luxSubStatus'),lc);
-  document.getElementById('luxBar').style.cssText='width:'+Math.min((d.lux/80000)*100,100)+'%;background:'+lc;
+  lv.textContent=ll;setColor(lv,lc);flash(lv);
+  document.getElementById('lightStatus').textContent=ll;setColor(document.getElementById('lightStatus'),lc);
+  document.getElementById('luxSubStatus').textContent=ll==='Light'?'Light Present':'Dark';setColor(document.getElementById('luxSubStatus'),lc);
+  document.getElementById('luxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
   document.getElementById('luxDot').style.background=lc;
 
   var bv=document.getElementById('batPctVal');
@@ -501,8 +496,8 @@ function applyData(d){
   document.getElementById('mSoilVal').textContent=d.soil+'%';
   document.getElementById('mPhBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
   document.getElementById('mPhVal').textContent=parseFloat(d.ph).toFixed(2);
-  document.getElementById('mLuxBar').style.cssText='width:'+Math.min((d.lux/80000)*100,100)+'%;background:'+lc;
-  document.getElementById('mLuxVal').textContent=d.lux+' lx';
+  document.getElementById('mLuxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
+  document.getElementById('mLuxVal').textContent=d.lux===1?'Light':'Dark';
   document.getElementById('mBatBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('mBatVal').textContent=d.batPct+'%';
 
@@ -544,13 +539,13 @@ function generateTestData(){
       cs.textContent='\u2022 Online';cs.style.color='#22c55e';
       if(d && typeof d==='object'){
         var data={
-          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
           batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
           tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
           soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
           phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
           batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-          lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
         };
         applyData(data);
         addToReportData(d);
@@ -571,13 +566,13 @@ function fetchData(){
       cs.textContent='\u2022 Online';cs.style.color='#22c55e';
       if(d && typeof d==='object'){
         var data={
-          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+          temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
           batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
           tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
           soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
           phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
           batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-          lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
         };
         applyData(data);
         addToReportData(d);
@@ -605,13 +600,13 @@ function streamData(){
       var cs=document.getElementById('connStatus');
       cs.textContent='\u2022 Online';cs.style.color='#22c55e';
       var data={
-        temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux||0,
+        temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
         batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
         tempStatus:d.temp<15||d.temp>35?'Alert':'Normal',
         soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
         phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
         batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-        lightStatus:d.lux<100?'Dark':d.lux<500?'Dim':'Bright'
+        lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
       };
       applyData(data);
       addToReportData(d);
