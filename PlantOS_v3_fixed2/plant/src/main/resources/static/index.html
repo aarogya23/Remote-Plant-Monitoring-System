@@ -297,8 +297,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <div class="bottom-row">
       <div class="chart-card">
-        <div class="chart-title">Sensor History</div>
-        <div class="chart-sub">Live rolling window &#8212; last 40 readings</div>
+        <div class="chart-title" id="lblSensorHistory">Sensor History</div>
+        <div class="chart-sub" id="lblChartSub">Live rolling window &#8212; last 40 readings</div>
         <div class="chart-area">
           <svg class="sparkline" id="sparkSVG" viewBox="0 0 600 200" preserveAspectRatio="none">
             <line x1="0" y1="40"  x2="600" y2="40"  stroke="#f1f5f9" stroke-width="1"/>
@@ -1041,34 +1041,7 @@ function changePageSize(){
   updateReportTable();
 }
 
-function exportReport(format){
-  var url='/api/report/export/'+format+'?period='+currentReportPeriod;
-  if(format==='csv' || format==='json'){
-    fetch(url)
-      .then(function(r){if(!r.ok)throw new Error(r.status);return r.text();})
-      .then(function(content){
-        var filename='plant-report.'+format;
-        var type=format==='csv'?'text/csv':'application/json';
-        downloadFile(content,filename,type);
-      })
-      .catch(function(err){
-        console.error('Export error:',err);
-        alert('Error exporting report');
-      });
-  }
-}
 
-function downloadFile(content,filename,type){
-  var blob=new Blob([content],{type:type});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;
-  a.download=filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 // Initialize Language on DOM Load
 document.addEventListener('DOMContentLoaded', function() {
