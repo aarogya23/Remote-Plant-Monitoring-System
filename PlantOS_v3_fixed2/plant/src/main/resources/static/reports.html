@@ -147,22 +147,22 @@
     <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti logo">
   </div>
   <div class="nav-section">
-    <div class="nav-label">Main</div>
-    <a class="nav-item" href="index.html" onclick="closeSidebar()"><span class="nav-icon">&#9783;</span> Dashboard</a>
-    <a class="nav-item active" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">&#128200;</span> Reports</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> Alerts</a>
+    <div class="nav-label" id="navLabelMain">Main</div>
+    <a class="nav-item" href="index.html" onclick="closeSidebar()"><span class="nav-icon">&#9783;</span> <span id="txtDashboard">Dashboard</span></a>
+    <a class="nav-item active" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">&#128200;</span> <span id="txtReports">Reports</span></a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> <span id="txtAlerts">Alerts</span></a>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Settings</div>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> Config</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> Device</a>
+    <div class="nav-label" id="navLabelSettings">Settings</div>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> <span id="txtConfig">Config</span></a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> <span id="txtDevice">Device</span></a>
   </div>
   <div class="sidebar-footer">
     <div class="device-chip">
       <div class="device-dot"></div>
       <div>
         <div class="device-name">ESP32-AGRO</div>
-        <div class="device-status">&#8226; Online</div>
+        <div class="device-status" id="connStatus">&#8226; <span id="txtOnline">Online</span></div>
       </div>
     </div>
   </div>
@@ -182,8 +182,14 @@
 
   <div class="topbar">
     <div class="topbar-title">
-      <h2>Data Reports</h2>
-      <p>View historical sensor data &amp; analytics</p>
+      <h2 id="reportsTitle">Data Reports</h2>
+      <p id="reportsSub">View historical sensor data &amp; analytics</p>
+    </div>
+    <div class="topbar-right">
+      <select id="langSelect" onchange="changeLanguage(this.value)" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; font-family: var(--font); cursor: pointer; font-size: 12px; outline: none;">
+        <option value="en">English</option>
+        <option value="ne">नेपाली</option>
+      </select>
     </div>
   </div>
 
@@ -191,8 +197,8 @@
 
     <div class="section-header">
       <div class="section-title">
-        <h3>Period Selection</h3>
-        <p>Choose a time period to view data</p>
+        <h3 id="lblPeriodSelection">Period Selection</h3>
+        <p id="lblChoosePeriod">Choose a time period to view data</p>
       </div>
       <div class="period-btns" id="periodBtns">
         <button class="period-btn" data-period="today">Today</button>
@@ -208,68 +214,68 @@
     </div>
 
     <div class="export-row">
-      <button class="btn btn-success" onclick="exportReport('csv')">&#128229; CSV</button>
-      <button class="btn btn-primary" onclick="exportReport('json')">&#128229; JSON</button>
-      <button class="btn btn-purple" onclick="exportReport('pdf')">&#128196; PDF</button>
-      <button class="btn btn-warning" onclick="printReport()">&#128424; Print</button>
+      <button class="btn btn-success" onclick="exportReport('csv')" id="btnCsv">&#128229; CSV</button>
+      <button class="btn btn-primary" onclick="exportReport('json')" id="btnJson">&#128229; JSON</button>
+      <button class="btn btn-purple" onclick="exportReport('pdf')" id="btnPdf">&#128196; PDF</button>
+      <button class="btn btn-warning" onclick="printReport()" id="btnPrint">&#128424; Print</button>
     </div>
 
     <div class="period-info">
-      <span>&#128202; Showing: <strong id="periodDisplay">Today</strong></span>
+      <span>&#128202; <span id="lblShowing">Showing:</span> <strong id="periodDisplay">Today</strong></span>
       <span class="record-count" id="dataCountDisplay">Loading&hellip;</span>
     </div>
 
     <div class="cards-grid">
       <div class="card">
-        <div class="card-label">Avg Temperature</div>
+        <div class="card-label" id="lblAvgTemp">Avg Temperature</div>
         <div><span class="card-value" id="reportAvgTemp">--</span><span class="card-unit">&deg;C</span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg Humidity</div>
+        <div class="card-label" id="lblAvgHum">Avg Humidity</div>
         <div><span class="card-value" id="reportAvgHum" style="color:#3b82f6">--</span><span class="card-unit">%</span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg Soil Moisture</div>
+        <div class="card-label" id="lblAvgSoil">Avg Soil Moisture</div>
         <div><span class="card-value" id="reportAvgSoil" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg pH</div>
+        <div class="card-label" id="lblAvgPh">Avg pH</div>
         <div><span class="card-value" id="reportAvgPH" style="color:#22c55e">--</span><span class="card-unit">pH</span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg Light</div>
+        <div class="card-label" id="lblAvgLight">Avg Light</div>
         <div><span class="card-value" id="reportAvgLux" style="color:#f59e0b">--</span><span class="card-unit" id="reportAvgLuxUnit"></span></div>
       </div>
       <div class="card">
-        <div class="card-label">Avg Battery</div>
+        <div class="card-label" id="lblAvgBat">Avg Battery</div>
         <div><span class="card-value" id="reportAvgBat" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
       </div>
     </div>
 
     <div class="chart-card">
-      <div class="chart-title">Historical Data</div>
-      <div class="chart-sub">Sensor readings for selected period</div>
-      <div class="scroll-hint">&#8592; swipe to see more columns &#8594;</div>
+      <div class="chart-title" id="lblHistTitle">Historical Data</div>
+      <div class="chart-sub" id="lblHistSub">Sensor readings for selected period</div>
+      <div class="scroll-hint" id="lblScrollHint">&#8592; swipe to see more columns &#8594;</div>
       <div class="table-wrap">
         <table class="report-table">
           <thead>
           <tr>
-            <th>Timestamp</th><th>Temp (&deg;C)</th><th>Humidity (%)</th>
-            <th>Soil (%)</th><th>pH</th><th>Light</th>
-            <th>Battery (%)</th><th>Status</th>
+            <th id="thTime">Timestamp</th><th id="thTemp">Temp (&deg;C)</th><th id="thHum">Humidity (%)</th>
+            <th id="thSoil">Soil (%)</th><th id="thPh">pH</th><th id="thLight">Light</th>
+            <th id="thBat">Battery (%)</th><th id="thStatus">Status</th><th id="thRec">Recommendation</th>
           </tr>
           </thead>
           <tbody id="reportTableBody">
-          <tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data available</td></tr>
+          <tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">No data available</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
     <div class="pagination">
-      <button class="btn btn-secondary" onclick="prevPage()">&#8592; Prev</button>
+      <button class="btn btn-secondary" onclick="prevPage()" id="btnPrev">&#8592; Prev</button>
       <span class="page-info" id="pageInfo">Page --</span>
-      <button class="btn btn-secondary" onclick="nextPage()">Next &#8594;</button>
+      <button class="btn btn-secondary" onclick="nextPage()" id="btnNext">Next &#8594;</button>
       <select class="page-size-select" id="pageSize" onchange="changePageSize()">
         <option value="10">10 / page</option>
         <option value="20">20 / page</option>
@@ -282,16 +288,227 @@
 
   <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; Krishi Drishti &nbsp;|&nbsp; http://192.168.4.1</div>
 </div>
-
-<script>
-  const PERIODS = {
-    today:'Today', last3days:'Last 3 Days', week:'Last 1 Week',
-    twoweeks:'Last 2 Weeks', month:'Last 1 Month', threemonths:'Last 3 Months',
-    sixmonths:'Last 6 Months', year:'Last Year', all:'All Data'
+  const TRANSLATIONS = {
+    en: {
+      reportsTitle: "Data Reports",
+      reportsSub: "View historical sensor data & analytics",
+      mainLabel: "Main",
+      dashboardNav: "Dashboard",
+      reportsNav: "Reports",
+      alertsNav: "Alerts",
+      settingsLabel: "Settings",
+      configNav: "Config",
+      deviceNav: "Device",
+      online: "Online",
+      periodSelection: "Period Selection",
+      choosePeriod: "Choose a time period to view data",
+      showing: "Showing:",
+      avgTemp: "Avg Temperature",
+      avgHum: "Avg Humidity",
+      avgSoil: "Avg Soil Moisture",
+      avgPh: "Avg pH",
+      avgLight: "Avg Light",
+      avgBat: "Avg Battery",
+      histTitle: "Historical Data",
+      histSub: "Sensor readings for selected period",
+      scrollHint: "&#8592; swipe to see more columns &#8594;",
+      thTime: "Timestamp",
+      thTemp: "Temp (&deg;C)",
+      thHum: "Humidity (%)",
+      thSoil: "Soil (%)",
+      thPh: "pH",
+      thLight: "Light",
+      thBat: "Battery (%)",
+      thStatus: "Status",
+      thRec: "Recommendation",
+      btnPrev: "&#8592; Prev",
+      btnNext: "Next &#8594;",
+      page: "Page",
+      of: "of",
+      reconnect: "Reconnecting...",
+      noData: "No data for selected period",
+      statusGood: "Good",
+      statusAlert: "Alert",
+      statusWarn: "Warn",
+      statusDry: "Dry",
+      statusWet: "Wet",
+      statusMoist: "Moist"
+    },
+    ne: {
+      reportsTitle: "डाटा रिपोर्टहरू",
+      reportsSub: "ऐतिहासिक सेन्सर डाटा र विश्लेषण हेर्नुहोस्",
+      mainLabel: "मुख्य",
+      dashboardNav: "ड्यासबोर्ड",
+      reportsNav: "रिपोर्टहरू",
+      alertsNav: "अलर्टहरू",
+      settingsLabel: "सेटिङहरू",
+      configNav: "कन्फिग",
+      deviceNav: "उपकरण",
+      online: "अनलाइन",
+      periodSelection: "अवधि चयन",
+      choosePeriod: "डाटा हेर्नको लागि समय अवधि छान्नुहोस्",
+      showing: "देखाइएको:",
+      avgTemp: "औसत तापक्रम",
+      avgHum: "औसत आर्द्रता",
+      avgSoil: "औसत माटोको ओस",
+      avgPh: "औसत pH",
+      avgLight: "औसत प्रकाश",
+      avgBat: "औसत ब्याट्री",
+      histTitle: "ऐतिहासिक डाटा",
+      histSub: "चयन गरिएको अवधिको लागि सेन्सर रिडिङहरू",
+      scrollHint: "&#8592; थप स्तम्भहरू हेर्न तेर्सो सार्नुहोस् &#8594;",
+      thTime: "समय",
+      thTemp: "तापक्रम (&deg;C)",
+      thHum: "आर्द्रता (%)",
+      thSoil: "माटोको ओस (%)",
+      thPh: "pH",
+      thLight: "प्रकाश",
+      thBat: "ब्याट्री (%)",
+      thStatus: "स्थिति",
+      thRec: "सुझाव",
+      btnPrev: "&#8592; अघिल्लो",
+      btnNext: "अर्को &#8594;",
+      page: "पृष्ठ",
+      of: "को",
+      reconnect: "पुनः जडान गरिँदै...",
+      noData: "चयन गरिएको अवधिको लागि कुनै डाटा छैन",
+      statusGood: "राम्रो",
+      statusAlert: "सतर्कता",
+      statusWarn: "चेतावनी",
+      statusDry: "सुक्खा",
+      statusWet: "चिलो",
+      statusMoist: "ठिक्क"
+    }
   };
+
+  const PERIODS_TRANSLATED = {
+    en: {
+      today:'Today', last3days:'Last 3 Days', week:'Last 1 Week',
+      twoweeks:'Last 2 Weeks', month:'Last 1 Month', threemonths:'Last 3 Months',
+      sixmonths:'Last 6 Months', year:'Last Year', all:'All Data'
+    },
+    ne: {
+      today:'आज', last3days:'अन्तिम ३ दिन', week:'अन्तिम १ हप्ता',
+      twoweeks:'अन्तिम २ हप्ता', month:'अन्तिम १ महिना', threemonths:'अन्तिम ३ महिना',
+      sixmonths:'अन्तिम ६ महिना', year:'अन्तिम वर्ष', all:'सबै डाटा'
+    }
+  };
+
   const STATUS_COLORS = { Good:'#22c55e', Alert:'#ef4444', Warn:'#f59e0b', Dry:'#f59e0b' };
 
   let activePeriod = 'today', currentPage = 1, pageSize = 10, reportData = [];
+  let currentLang = localStorage.getItem('lang') || 'en';
+  let cachedFontBase64 = null;
+
+  function changeLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    updateUILanguage();
+    loadStats();
+    renderPage();
+  }
+
+  function updateUILanguage() {
+    const dict = TRANSLATIONS[currentLang];
+    document.getElementById('langSelect').value = currentLang;
+    
+    document.getElementById('reportsTitle').textContent = dict.reportsTitle;
+    document.getElementById('reportsSub').textContent = dict.reportsSub;
+    document.getElementById('navLabelMain').textContent = dict.mainLabel;
+    document.getElementById('txtDashboard').textContent = dict.dashboardNav;
+    document.getElementById('txtReports').textContent = dict.reportsNav;
+    document.getElementById('txtAlerts').textContent = dict.alertsNav;
+    document.getElementById('navLabelSettings').textContent = dict.settingsLabel;
+    document.getElementById('txtConfig').textContent = dict.configNav;
+    document.getElementById('txtDevice').textContent = dict.deviceNav;
+    
+    document.getElementById('lblPeriodSelection').textContent = dict.periodSelection;
+    document.getElementById('lblChoosePeriod').textContent = dict.choosePeriod;
+    document.getElementById('lblShowing').textContent = dict.showing;
+    
+    document.getElementById('lblAvgTemp').textContent = dict.avgTemp;
+    document.getElementById('lblAvgHum').textContent = dict.avgHum;
+    document.getElementById('lblAvgSoil').textContent = dict.avgSoil;
+    document.getElementById('lblAvgPh').textContent = dict.avgPh;
+    document.getElementById('lblAvgLight').textContent = dict.avgLight;
+    document.getElementById('lblAvgBat').textContent = dict.avgBat;
+    
+    document.getElementById('lblHistTitle').textContent = dict.histTitle;
+    document.getElementById('lblHistSub').textContent = dict.histSub;
+    document.getElementById('lblScrollHint').innerHTML = dict.scrollHint;
+    
+    document.getElementById('thTime').textContent = dict.thTime;
+    document.getElementById('thTemp').innerHTML = dict.thTemp;
+    document.getElementById('thHum').textContent = dict.thHum;
+    document.getElementById('thSoil').textContent = dict.thSoil;
+    document.getElementById('thPh').textContent = dict.thPh;
+    document.getElementById('thLight').textContent = dict.thLight;
+    document.getElementById('thBat').textContent = dict.thBat;
+    document.getElementById('thStatus').textContent = dict.thStatus;
+    document.getElementById('thRec').textContent = dict.thRec;
+    
+    document.getElementById('btnPrev').innerHTML = dict.btnPrev;
+    document.getElementById('btnNext').innerHTML = dict.btnNext;
+    
+    const buttons = document.querySelectorAll('.period-btn');
+    buttons.forEach(btn => {
+      const p = btn.dataset.period;
+      btn.textContent = PERIODS_TRANSLATED[currentLang][p] || p;
+      btn.classList.toggle('active', btn.dataset.period === activePeriod);
+    });
+
+    document.getElementById('periodDisplay').textContent = PERIODS_TRANSLATED[currentLang][activePeriod] || activePeriod;
+    
+    const pageSizeSelect = document.getElementById('pageSize');
+    const options = pageSizeSelect.options;
+    const perPageText = currentLang === 'en' ? ' / page' : ' / पृष्ठ';
+    for (let i = 0; i < options.length; i++) {
+      const val = options[i].value;
+      options[i].textContent = val + perPageText;
+    }
+  }
+
+  function getRowRecommendation(r, lang) {
+    const isEn = lang === 'en';
+    let recs = [];
+    
+    if (r.soil < 30) {
+      recs.push(isEn ? "Water plant now" : "तुरुन्तै पानी हाल्नुहोस्");
+    } else if (r.soil > 60) {
+      recs.push(isEn ? "Avoid watering (soil wet)" : "पानी नहाल्नुहोस् (माटो चिसो छ)");
+    }
+    
+    if (r.temp < 15) {
+      recs.push(isEn ? "Move to warmer spot" : "न्यानो ठाउँमा सार्नुहोस्");
+    } else if (r.temp > 35) {
+      recs.push(isEn ? "Provide shade/cooling" : "छहारी वा चिसो व्यवस्था गर्नुहोस्");
+    }
+    
+    if (r.ph < 5.5) {
+      recs.push(isEn ? "Add agricultural lime" : "कृषि चुन थप्नुहोस्");
+    } else if (r.ph > 7.5) {
+      recs.push(isEn ? "Add organic compost" : "प्राङ्गारिक मल थप्नुहोस्");
+    }
+    
+    if (r.humidity < 40) {
+      recs.push(isEn ? "Mist leaves" : "पातमा पानी छर्कनुहोस्");
+    } else if (r.humidity > 70) {
+      recs.push(isEn ? "Improve ventilation" : "हावा आवतजावत बढाउनुहोस्");
+    }
+    
+    if (r.lux === 0) {
+      recs.push(isEn ? "Increase light" : "उज्यालो बढाउनुहोस्");
+    }
+    
+    if (r.batPct < 20) {
+      recs.push(isEn ? "Charge battery" : "चार्ज गर्नुहोस्");
+    }
+
+    if (recs.length === 0) {
+      return isEn ? "Conditions optimal" : "अवस्था सामान्य छ";
+    }
+    return recs.join("; ");
+  }
 
   function toggleSidebar() { document.body.classList.toggle('nav-open'); }
   function closeSidebar()  { document.body.classList.remove('nav-open'); }
@@ -303,7 +520,7 @@
 
   function setPeriod(period) {
     activePeriod = period; currentPage = 1;
-    document.getElementById('periodDisplay').textContent = PERIODS[period] || period;
+    document.getElementById('periodDisplay').textContent = PERIODS_TRANSLATED[currentLang][period] || period;
     document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === period));
     loadStats(); loadTable();
   }
@@ -316,12 +533,14 @@
               set('reportAvgTemp', s.averageTemp, 1); set('reportAvgHum', s.averageHumidity, 0);
               set('reportAvgSoil', s.averageSoil, 0); set('reportAvgPH', s.averagePh, 2);
               set('reportAvgLux', s.averageLux, 1);   set('reportAvgBat', s.averageBattery, 0);
-              document.getElementById('dataCountDisplay').textContent = (s.count || 0) + ' records';
+              
+              const recCountText = currentLang === 'en' ? ' records' : ' रेकर्डहरू';
+              document.getElementById('dataCountDisplay').textContent = (s.count || 0) + recCountText;
             })
             .catch(() => {
               ['reportAvgTemp','reportAvgHum','reportAvgSoil','reportAvgPH','reportAvgLux','reportAvgBat']
                       .forEach(id => document.getElementById(id).textContent = '--');
-              document.getElementById('dataCountDisplay').textContent = 'No data';
+              document.getElementById('dataCountDisplay').textContent = currentLang === 'en' ? 'No data' : 'डाटा छैन';
             });
   }
 
@@ -330,9 +549,10 @@
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(data => { reportData = data; renderPage(); })
             .catch(e => {
+              const errMsg = currentLang === 'en' ? 'Backend not reachable' : 'ब्याकइन्ड जडान हुन सकेन';
               document.getElementById('reportTableBody').innerHTML =
-                      `<tr><td colspan="8" style="padding:24px;text-align:center;color:#ef4444">Backend not reachable &mdash; ${e.message}</td></tr>`;
-              document.getElementById('dataCountDisplay').textContent = 'Error';
+                      `<tr><td colspan="9" style="padding:24px;text-align:center;color:#ef4444">${errMsg} &mdash; ${e.message}</td></tr>`;
+              document.getElementById('dataCountDisplay').textContent = currentLang === 'en' ? 'Error' : 'त्रुटि';
             });
   }
 
@@ -346,24 +566,29 @@
   function renderPage() {
     const tbody = document.getElementById('reportTableBody');
     const info  = document.getElementById('pageInfo');
+    const dict = TRANSLATIONS[currentLang];
     tbody.innerHTML = '';
     if (!reportData.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--muted)">No data for ${PERIODS[activePeriod]}</td></tr>`;
-      info.textContent = 'Page --'; return;
+      tbody.innerHTML = `<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--muted)">${dict.noData}</td></tr>`;
+      info.textContent = currentLang === 'en' ? 'Page --' : 'पृष्ठ --'; return;
     }
     const total = Math.ceil(reportData.length / pageSize) || 1;
     reportData.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach(row => {
       const s = getStatus(row);
+      const sTrans = dict['status' + s] || s;
       const tr = document.createElement('tr');
-      const irText = row.lux === 1 ? 'Light' : 'Dark';
+      const irText = row.lux === 1 ? (currentLang === 'en' ? 'Light' : 'उज्यालो') : (currentLang === 'en' ? 'Dark' : 'अध्यारो');
+      const rec = getRowRecommendation(row, currentLang);
+      
       tr.innerHTML = `<td>${new Date(row.ts).toLocaleString()}</td>
       <td>${(+row.temp).toFixed(1)}</td><td>${(+row.humidity).toFixed(0)}</td>
       <td>${(+row.soil).toFixed(0)}</td><td>${(+row.ph).toFixed(2)}</td>
       <td>${irText}</td><td>${(+row.batPct).toFixed(0)}</td>
-      <td style="color:${STATUS_COLORS[s]};font-weight:700">${s}</td>`;
+      <td style="color:${STATUS_COLORS[s]};font-weight:700">${sTrans}</td>
+      <td style="text-align:left; font-size:11px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${rec}">${rec}</td>`;
       tbody.appendChild(tr);
     });
-    info.textContent = `Page ${currentPage} of ${total}`;
+    info.textContent = currentLang === 'en' ? `Page ${currentPage} of ${total}` : `पृष्ठ ${currentPage} को ${total}`;
   }
 
   function prevPage()       { if (currentPage > 1) { currentPage--; renderPage(); } }
@@ -374,7 +599,7 @@
     fetch('/api/report/readings?period=' + activePeriod)
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(rows => {
-              if (!rows?.length) { alert('No data to export'); return; }
+              if (!rows?.length) { alert(currentLang === 'en' ? 'No data to export' : 'निर्यात गर्न कुनै डाटा छैन'); return; }
               if (fmt === 'csv')  exportCsv(rows);
               if (fmt === 'json') exportJson(rows);
               if (fmt === 'pdf')  exportPdf(rows);
@@ -383,47 +608,185 @@
   }
 
   function exportCsv(rows) {
-    const lines = ['Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light,Battery (%)'];
-    rows.forEach(r => lines.push([new Date(r.ts).toISOString(),(+r.temp).toFixed(1),(+r.humidity).toFixed(0),(+r.soil).toFixed(0),(+r.ph).toFixed(2),r.lux===1?'Light':'Dark',(+r.batPct).toFixed(0)].join(',')));
-    dl(new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'}), 'plant-report.csv');
+    const isNe = currentLang === 'ne';
+    const lines = [];
+    if (isNe) {
+      lines.push('समय (Timestamp),तापक्रम (Temperature C),आर्द्रता (Humidity %),माटोको ओस (Soil %),pH,प्रकाश (Light),ब्याट्री (Battery %),सुझाव (Recommendation)');
+      rows.forEach(r => {
+        const rec = getRowRecommendation(r, 'ne');
+        lines.push([
+          new Date(r.ts).toISOString(),
+          (+r.temp).toFixed(1),
+          (+r.humidity).toFixed(0),
+          (+r.soil).toFixed(0),
+          (+r.ph).toFixed(2),
+          r.lux === 1 ? 'उज्यालो' : 'अध्यारो',
+          (+r.batPct).toFixed(0),
+          `"${rec.replace(/"/g, '""')}"`
+        ].join(','));
+      });
+      dl(new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), lines.join('\n')], {type:'text/csv;charset=utf-8'}), 'plant-report-nepali.csv');
+    } else {
+      lines.push('Timestamp,Temperature (C),Humidity (%),Soil (%),pH,Light,Battery (%),Recommendation');
+      rows.forEach(r => {
+        const rec = getRowRecommendation(r, 'en');
+        lines.push([
+          new Date(r.ts).toISOString(),
+          (+r.temp).toFixed(1),
+          (+r.humidity).toFixed(0),
+          (+r.soil).toFixed(0),
+          (+r.ph).toFixed(2),
+          r.lux === 1 ? 'Light' : 'Dark',
+          (+r.batPct).toFixed(0),
+          `"${rec.replace(/"/g, '""')}"`
+        ].join(','));
+      });
+      dl(new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'}), 'plant-report.csv');
+    }
   }
 
   function exportJson(rows) {
-    dl(new Blob([JSON.stringify({generatedAt:new Date().toISOString(),period:activePeriod,count:rows.length,readings:rows},null,2)],{type:'application/json'}), 'plant-report.json');
+    const isNe = currentLang === 'ne';
+    const readings = rows.map(r => {
+      return {
+        ts: r.ts,
+        temp: r.temp,
+        humidity: r.humidity,
+        soil: r.soil,
+        ph: r.ph,
+        light: r.lux === 1 ? (isNe ? 'उज्यालो' : 'Light') : (isNe ? 'अध्यारो' : 'Dark'),
+        batPct: r.batPct,
+        recommendation: getRowRecommendation(r, currentLang)
+      };
+    });
+    dl(new Blob([JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      period: activePeriod,
+      language: currentLang,
+      count: rows.length,
+      readings: readings
+    }, null, 2)], {type:'application/json'}), isNe ? 'plant-report-nepali.json' : 'plant-report.json');
   }
 
-  function exportPdf(rows) {
+  async function exportPdf(rows) {
     if (!window.jspdf?.jsPDF) { alert('PDF library not loaded. Refresh and try again.'); return; }
     const doc = new window.jspdf.jsPDF({unit:'pt',format:'a4'});
-    const pageW = doc.internal.pageSize.getWidth(); let y = 40;
-    doc.setFont('helvetica','bold'); doc.setFontSize(14);
-    doc.text('Krishi Drishti \u2014 ' + PERIODS[activePeriod] + ' Report', 40, y); y += 18;
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    doc.text('Generated: ' + new Date().toLocaleString(), 40, y); y += 14;
-    doc.text('Records: ' + rows.length, 40, y); y += 18;
-    doc.line(40, y, pageW - 40, y); y += 14;
+    const isNe = currentLang === 'ne';
+    
+    if (isNe) {
+      const btn = document.getElementById('btnPdf');
+      const originalText = btn.textContent;
+      btn.textContent = "Loading Font...";
+      try {
+        if (!cachedFontBase64) {
+          const response = await fetch('https://cdn.jsdelivr.net/gh/googlefonts/noto-fonts@master/hinted/ttf/NotoSansDevanagari/NotoSansDevanagari-Regular.ttf');
+          const blob = await response.blob();
+          cachedFontBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+        doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', cachedFontBase64);
+        doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+        doc.setFont('NotoSansDevanagari', 'normal');
+      } catch(err) {
+        console.error("Failed to load Devanagari font:", err);
+        alert("Error loading Devanagari font. Exporting in standard English font.");
+        doc.setFont('helvetica', 'normal');
+      } finally {
+        btn.textContent = originalText;
+      }
+    } else {
+      doc.setFont('helvetica', 'normal');
+    }
+
+    const pageW = doc.internal.pageSize.getWidth(); 
+    let y = 40;
+    
+    const titleText = isNe ? 'कृषि दृष्टि — रिपोर्ट' : 'Krishi Drishti \u2014 ' + PERIODS_TRANSLATED[currentLang][activePeriod] + ' Report';
+    doc.setFontSize(14);
+    doc.text(titleText, 40, y); 
+    y += 18;
+    
+    doc.setFontSize(10);
+    const genText = (isNe ? 'उत्पादन गरिएको मिति: ' : 'Generated: ') + new Date().toLocaleString();
+    doc.text(genText, 40, y); 
+    y += 14;
+    
+    const recsCountText = (isNe ? 'कुल रेकर्डहरू: ' : 'Records: ') + rows.length;
+    doc.text(recsCountText, 40, y); 
+    y += 18;
+    
+    doc.line(40, y, pageW - 40, y); 
+    y += 14;
+    
     const shown = Math.min(rows.length, 65);
     for (let i = 0; i < shown; i++) {
       const r = rows[i];
-      doc.text(`${new Date(r.ts).toLocaleString()} | T:${(+r.temp).toFixed(1)}C H:${(+r.humidity).toFixed(0)}% Soil:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} Light:${r.lux===1?'Light':'Dark'} Bat:${(+r.batPct).toFixed(0)}%`, 40, y);
-      y += 14; if (y > 790) break;
+      const rec = getRowRecommendation(r, currentLang);
+      const dateStr = new Date(r.ts).toLocaleString();
+      
+      let line = "";
+      if (isNe) {
+        line = `${dateStr} | तापक्रम:${(+r.temp).toFixed(1)}C आर्द्रता:${(+r.humidity).toFixed(0)}% माटो:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} प्रकाश:${r.lux===1?'उज्यालो':'अध्यारो'} ब्याट्री:${(+r.batPct).toFixed(0)}%`;
+      } else {
+        line = `${dateStr} | T:${(+r.temp).toFixed(1)}C H:${(+r.humidity).toFixed(0)}% Soil:${(+r.soil).toFixed(0)}% pH:${(+r.ph).toFixed(2)} Light:${r.lux===1?'Light':'Dark'} Bat:${(+r.batPct).toFixed(0)}%`;
+      }
+      doc.setFontSize(8);
+      doc.text(line, 40, y);
+      y += 11;
+      
+      const recText = (isNe ? 'सुझाव: ' : 'Rec: ') + rec;
+      doc.text(recText, 50, y);
+      y += 15;
+      
+      if (y > 780) {
+        doc.addPage();
+        if (isNe) {
+          doc.setFont('NotoSansDevanagari', 'normal');
+        }
+        y = 40;
+      }
     }
-    if (rows.length > shown) { y += 8; doc.text(`Showing first ${shown} rows.`, 40, y); }
-    doc.save('plant-report.pdf');
+    
+    if (rows.length > shown) { 
+      y += 8; 
+      const footerText = isNe ? `पहिलो ${shown} रेकर्डहरू देखाइएको छ।` : `Showing first ${shown} rows.`;
+      doc.text(footerText, 40, y); 
+    }
+    
+    doc.save(isNe ? 'plant-report-nepali.pdf' : 'plant-report.pdf');
   }
 
   function printReport() {
     fetch('/api/report/readings?period=' + activePeriod)
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(rows => {
-              if (!rows.length) { alert('No data to print'); return; }
+              if (!rows.length) { alert(currentLang === 'en' ? 'No data to print' : 'प्रिन्ट गर्न कुनै डाटा छैन'); return; }
+              const isNe = currentLang === 'ne';
               const w = window.open('','_blank','height=600,width=900');
-              w.document.write(`<html><head><title>Krishi Drishti Report</title>
+              const periodText = PERIODS_TRANSLATED[currentLang][activePeriod];
+              const titleText = isNe ? `कृषि दृष्टि — ${periodText} रिपोर्ट` : `Krishi Drishti \u2014 ${periodText} Report`;
+              const dateText = isNe ? `उत्पादन गरिएको मिति: ${new Date().toLocaleString()}` : `Generated: ${new Date().toLocaleString()}`;
+              const recordsText = isNe ? `कुल रेकर्डहरू: ${rows.length}` : `Records: ${rows.length}`;
+              
+              const tableHeaders = isNe ? 
+                `<tr><th>समय (Timestamp)</th><th>तापक्रम (&deg;C)</th><th>आर्द्रता (%)</th><th>माटो (%)</th><th>pH</th><th>प्रकाश</th><th>ब्याट्री</th><th>सुझाव</th></tr>` :
+                `<tr><th>Timestamp</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>pH</th><th>Light</th><th>Battery</th><th>Recommendation</th></tr>`;
+                
+              w.document.write(`<html><head><title>${titleText}</title>
         <style>body{font-family:Arial;margin:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}h1{color:#16a34a}</style>
-        </head><body><h1>Krishi Drishti \u2014 ${PERIODS[activePeriod]} Report</h1>
-        <p>Generated: ${new Date().toLocaleString()} | Records: ${rows.length}</p>
-        <table><tr><th>Timestamp</th><th>Temp</th><th>Humidity</th><th>Soil</th><th>pH</th><th>Light</th><th>Battery</th></tr>
-        ${rows.map(r=>`<tr><td>${new Date(r.ts).toLocaleString()}</td><td>${(+r.temp).toFixed(1)}</td><td>${(+r.humidity).toFixed(0)}</td><td>${(+r.soil).toFixed(0)}</td><td>${(+r.ph).toFixed(2)}</td><td>${r.lux===1?'Light':'Dark'}</td><td>${(+r.batPct).toFixed(0)}</td></tr>`).join('')}
+        </head><body><h1>${titleText}</h1>
+        <p>${dateText} | ${recordsText}</p>
+        <table>
+        ${tableHeaders}
+        ${rows.map(r=> {
+          const rec = getRowRecommendation(r, currentLang);
+          const lightText = r.lux === 1 ? (isNe ? 'उज्यालो' : 'Light') : (isNe ? 'अध्यारो' : 'Dark');
+          return `<tr><td>${new Date(r.ts).toLocaleString()}</td><td>${(+r.temp).toFixed(1)}</td><td>${(+r.humidity).toFixed(0)}</td><td>${(+r.soil).toFixed(0)}</td><td>${(+r.ph).toFixed(2)}</td><td>${lightText}</td><td>${(+r.batPct).toFixed(0)}%</td><td>${rec}</td></tr>`;
+        }).join('')}
         </table></body></html>`);
               w.document.close(); w.print();
             })
@@ -435,7 +798,10 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
   }
 
-  document.addEventListener('DOMContentLoaded', () => setPeriod('today'));
+  document.addEventListener('DOMContentLoaded', () => {
+    updateUILanguage();
+    setPeriod('today');
+  });
 </script>
 </body>
 </html>

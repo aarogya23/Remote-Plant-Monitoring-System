@@ -133,22 +133,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <img class="brand-logo" src="logo-transparent.png" alt="Krishi Drishti logo">
   </div>
   <div class="nav-section">
-    <div class="nav-label">Main</div>
-    <a class="nav-item active" id="navDashboard" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">&#9783;</span> Dashboard</a>
-    <a class="nav-item" id="navReports" href="reports.html" target="_self" onclick="closeSidebar()"><span class="nav-icon">&#128200;</span> Reports</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> Alerts</a>
+    <div class="nav-label" id="navLabelMain">Main</div>
+    <a class="nav-item active" id="navDashboard" href="javascript:void(0)" onclick="closeSidebar()"><span class="nav-icon">&#9783;</span> <span id="txtDashboard">Dashboard</span></a>
+    <a class="nav-item" id="navReports" href="reports.html" target="_self" onclick="closeSidebar()"><span class="nav-icon">&#128200;</span> <span id="txtReports">Reports</span></a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128276;</span> <span id="txtAlerts">Alerts</span></a>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Settings</div>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> Config</a>
-    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> Device</a>
+    <div class="nav-label" id="navLabelSettings">Settings</div>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#9881;</span> <span id="txtConfig">Config</span></a>
+    <a class="nav-item" href="#" onclick="closeSidebar()"><span class="nav-icon">&#128268;</span> <span id="txtDevice">Device</span></a>
   </div>
   <div class="sidebar-footer">
     <div class="device-chip">
       <div class="device-dot"></div>
       <div>
         <div class="device-name">ESP32-AGRO</div>
-        <div class="device-status" id="connStatus">&#8226; Online</div>
+        <div class="device-status" id="connStatus">&#8226; <span id="txtOnline">Online</span></div>
       </div>
     </div>
   </div>
@@ -167,13 +167,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
   </div>
   <div class="topbar">
     <div class="topbar-title">
-      <h2>Krishi Drishti Dashboard</h2>
+      <h2 id="dashboardTitle">Krishi Drishti Dashboard</h2>
       <p id="lastRead">Last reading: --:--:--</p>
     </div>
     <div class="topbar-right">
-      <button onclick="generateTestData()" class="btn btn-primary" style="margin-right:10px">Test Data</button>
+      <select id="langSelect" onchange="changeLanguage(this.value)" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; font-family: var(--font); cursor: pointer; font-size: 12px; outline: none;">
+        <option value="en">English</option>
+        <option value="ne">नेपाली</option>
+      </select>
+      <button onclick="generateTestData()" class="btn btn-primary" style="margin-right:10px" id="btnTestData">Test Data</button>
       <div class="time-display" id="clockDisp">--:--:--</div>
-      <div class="live-badge"><div class="live-dot"></div> Live</div>
+      <div class="live-badge"><div class="live-dot"></div> <span id="txtLive">Live</span></div>
     </div>
   </div>
 
@@ -181,11 +185,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
     <!-- Dashboard View -->
     <div id="dashboardView" style="display:block">
-      <div class="wifi-info">
+      <div class="wifi-info" id="wifiInfo">
         &#128225; Hotspot: <strong>Krishi Drishti</strong> &nbsp;|&nbsp; Password: <strong>plant1234</strong> &nbsp;|&nbsp; Open: <strong>http://192.168.4.1</strong>
       </div>
 
-      <div class="pin-info">
+      <div class="pin-info" id="pinInfo">
         &#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4
       </div>
 
@@ -194,19 +198,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         <span id="alertMsg">Plant is healthy &amp; happy</span>
       </div>
 
+      <!-- Recommendations panel -->
+      <div class="card" id="recommendationsCard" style="margin-top: 5px; margin-bottom: 5px;">
+        <div class="chart-title" id="recTitle">Actionable Recommendations</div>
+        <div class="chart-sub" id="recSub">Based on current sensor data and crop guidelines</div>
+        <div id="recList" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+        </div>
+      </div>
+
     <div class="cards-grid">
       <div class="card">
         <div class="card-header">
           <div class="card-icon">&#127777;</div>
           <span class="card-delta" id="tempStatus">Normal</span>
         </div>
-        <div class="card-label">Temperature (DHT22)</div>
+        <div class="card-label" id="lblTemp">Temperature (DHT22)</div>
         <div><span class="card-value" id="tempVal">--</span><span class="card-unit">&deg;C</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="tempBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="tempDot" style="background:#22c55e"></div>
           <span id="tempSubStatus" style="color:#22c55e">Normal</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 15&#8211;35&#176;C</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalTemp">&nbsp;Optimal 15&#8211;35&#176;C</span>
         </div>
       </div>
       <div class="card">
@@ -214,12 +226,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="card-icon">&#128167;</div>
           <span class="card-delta" id="humDelta" style="color:#3b82f6">--%</span>
         </div>
-        <div class="card-label">Humidity (DHT22)</div>
+        <div class="card-label" id="lblHum">Humidity (DHT22)</div>
         <div><span class="card-value" id="humVal" style="color:#3b82f6">--</span><span class="card-unit">%</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="humBar" style="width:0%;background:#3b82f6"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="humDot" style="background:#3b82f6"></div>
-          <span style="color:var(--muted);font-weight:400">Optimal 40&#8211;70%</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalHum">Optimal 40&#8211;70%</span>
         </div>
       </div>
       <div class="card">
@@ -227,13 +239,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="card-icon">&#127807;</div>
           <span class="card-delta" id="soilStatus">Moist</span>
         </div>
-        <div class="card-label">Soil Moisture (GPIO34)</div>
+        <div class="card-label" id="lblSoil">Soil Moisture (GPIO34)</div>
         <div><span class="card-value" id="soilVal">--</span><span class="card-unit">%</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="soilBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="soilDot" style="background:#22c55e"></div>
           <span id="soilSubStatus" style="color:#22c55e">Moist</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 35&#8211;65%</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalSoil">&nbsp;Optimal 35&#8211;65%</span>
         </div>
       </div>
     </div>
@@ -244,13 +256,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="card-icon">&#9878;</div>
           <span class="card-delta" id="phStatus" style="color:#22c55e">Neutral</span>
         </div>
-        <div class="card-label">Soil pH (GPIO35)</div>
+        <div class="card-label" id="lblPh">Soil pH (GPIO35)</div>
         <div><span class="card-value" id="phVal" style="color:#22c55e">--</span><span class="card-unit">pH</span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="phBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="phDot" style="background:#22c55e"></div>
           <span id="phSubStatus" style="color:#22c55e">Neutral</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Optimal 5.5&#8211;7.5</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalPh">&nbsp;Optimal 5.5&#8211;7.5</span>
         </div>
       </div>
       <div class="card">
@@ -258,16 +270,29 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           <div class="card-icon">&#9728;</div>
           <span class="card-delta" id="lightStatus" style="color:#22c55e">--</span>
         </div>
-        <div class="card-label">Light (IR Sensor)</div>
+        <div class="card-label" id="lblLight">Light (IR Sensor)</div>
         <div><span class="card-value" id="luxVal" style="color:#22c55e">--</span><span class="card-unit" id="luxUnit"></span></div>
         <div class="card-bar-track"><div class="card-bar-fill" id="luxBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="luxDot" style="background:#22c55e"></div>
           <span id="luxSubStatus" style="color:#22c55e">--</span>
-          <span style="color:var(--muted);font-weight:400">&nbsp;Light detection</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalLight">&nbsp;Light detection</span>
         </div>
       </div>
-
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">&#128267;</div>
+          <span class="card-delta" id="batStatusLabel" style="color:#22c55e">Good</span>
+        </div>
+        <div class="card-label" id="lblBattery">Battery Level</div>
+        <div><span class="card-value" id="batPctVal" style="color:#22c55e">--</span><span class="card-unit">%</span></div>
+        <div class="card-bar-track"><div class="card-bar-fill" id="batBar" style="width:0%;background:#22c55e"></div></div>
+        <div class="card-sub">
+          <div class="status-dot" id="batDot" style="background:#22c55e"></div>
+          <span id="batVoltVal" style="color:#22c55e">--V</span>
+          <span style="color:var(--muted);font-weight:400" id="lblBatterySub">&nbsp;Device battery status</span>
+        </div>
+      </div>
     </div>
 
     <div class="bottom-row">
@@ -288,17 +313,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
           </svg>
         </div>
         <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Temp (&#176;C)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Humidity (%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Soil (%)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> pH</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Light</div>
+          <div class="legend-item" id="lblLegTemp"><div class="legend-dot" style="background:#ef4444"></div> Temp (&#176;C)</div>
+          <div class="legend-item" id="lblLegHum"><div class="legend-dot" style="background:#3b82f6"></div> Humidity (%)</div>
+          <div class="legend-item" id="lblLegSoil"><div class="legend-dot" style="background:#22c55e"></div> Soil (%)</div>
+          <div class="legend-item" id="lblLegPh"><div class="legend-dot" style="background:#8b5cf6"></div> pH</div>
+          <div class="legend-item" id="lblLegLight"><div class="legend-dot" style="background:#f59e0b"></div> Light</div>
         </div>
       </div>
 
       <div class="health-card">
-        <div class="health-title">Plant Health</div>
-        <div class="health-sub">Composite score &#8212; all 6 sensors</div>
+        <div class="health-title" id="lblPlantHealth">Plant Health</div>
+        <div class="health-sub" id="lblCompositeScore">Composite score &#8212; all 6 sensors</div>
         <div class="health-ring-wrap">
           <svg width="150" height="150" viewBox="0 0 150 150">
             <circle cx="75" cy="75" r="54" fill="none" stroke="#f1f5f9" stroke-width="11"/>
@@ -312,43 +337,43 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
               id="healthPct" fill="#22c55e">--%</text>
             <text x="75" y="88" text-anchor="middle"
               font-family="'DM Sans',sans-serif" font-size="11" font-weight="500"
-              fill="#94a3b8">HEALTH</text>
+              id="lblHealthText" fill="#94a3b8">HEALTH</text>
           </svg>
         </div>
         <div class="health-metrics">
           <div class="metric-row">
             <span class="metric-icon">&#127777;</span>
-            <span class="metric-name">Temp</span>
+            <span class="metric-name" id="lblMetTemp">Temp</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mTempBar" style="width:0%;background:#ef4444"></div></div>
             <span class="metric-val" id="mTempVal">--&#176;C</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#128167;</span>
-            <span class="metric-name">Humidity</span>
+            <span class="metric-name" id="lblMetHum">Humidity</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mHumBar" style="width:0%;background:#3b82f6"></div></div>
             <span class="metric-val" id="mHumVal">--%</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#127807;</span>
-            <span class="metric-name">Soil</span>
+            <span class="metric-name" id="lblMetSoil">Soil</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mSoilBar" style="width:0%;background:#22c55e"></div></div>
             <span class="metric-val" id="mSoilVal">--%</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#9878;</span>
-            <span class="metric-name">pH</span>
+            <span class="metric-name" id="lblMetPh">pH</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mPhBar" style="width:0%;background:#8b5cf6"></div></div>
             <span class="metric-val" id="mPhVal">--</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#9728;</span>
-            <span class="metric-name">Light</span>
+            <span class="metric-name" id="lblMetLight">Light</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mLuxBar" style="width:0%;background:#22c55e"></div></div>
             <span class="metric-val" id="mLuxVal">--</span>
           </div>
           <div class="metric-row">
             <span class="metric-icon">&#128267;</span>
-            <span class="metric-name">Battery</span>
+            <span class="metric-name" id="lblMetBattery">Battery</span>
             <div class="metric-bar"><div class="metric-bar-fill" id="mBatBar" style="width:0%;background:#22c55e"></div></div>
             <span class="metric-val" id="mBatVal">--%</span>
           </div>
@@ -366,6 +391,351 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 
 
 <script>
+const TRANSLATIONS = {
+  en: {
+    dashboardTitle: "Krishi Drishti Dashboard",
+    lastRead: "Last reading: ",
+    testData: "Test Data",
+    live: "Live",
+    mainLabel: "Main",
+    dashboardNav: "Dashboard",
+    reportsNav: "Reports",
+    alertsNav: "Alerts",
+    settingsLabel: "Settings",
+    configNav: "Config",
+    deviceNav: "Device",
+    online: "Online",
+    hotspotInfo: "&#128225; Hotspot: <strong>Krishi Drishti</strong> &nbsp;|&nbsp; Password: <strong>plant1234</strong> &nbsp;|&nbsp; Open: <strong>http://192.168.4.1</strong>",
+    pinInfo: "&#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4",
+    tempLabel: "Temperature (DHT22)",
+    optimalTemp: "&nbsp;Optimal 15&#8211;35&#176;C",
+    humLabel: "Humidity (DHT22)",
+    optimalHum: "Optimal 40&#8211;70%",
+    soilLabel: "Soil Moisture (GPIO34)",
+    optimalSoil: "&nbsp;Optimal 35&#8211;65%",
+    phLabel: "Soil pH (GPIO35)",
+    optimalPh: "&nbsp;Optimal 5.5&#8211;7.5",
+    lightLabel: "Light (IR Sensor)",
+    optimalLight: "&nbsp;Light detection",
+    batteryLabel: "Battery Level",
+    batterySub: "&nbsp;Device battery status",
+    sensorHistory: "Sensor History",
+    chartSub: "Live rolling window &#8212; last 40 readings",
+    legendTemp: "Temp (&#176;C)",
+    legendHum: "Humidity (%)",
+    legendSoil: "Soil (%)",
+    legendPh: "pH",
+    legendLight: "Light",
+    plantHealth: "Plant Health",
+    compositeScore: "Composite score &#8212; all 6 sensors",
+    healthText: "HEALTH",
+    recsTitle: "Actionable Recommendations",
+    recsSub: "Based on current sensor data and crop guidelines",
+    // status values
+    Normal: "Normal",
+    Alert: "Alert",
+    Moist: "Moist",
+    Dry: "Dry",
+    Wet: "Wet",
+    Neutral: "Neutral",
+    Warning: "Warning",
+    Critical: "Critical",
+    Low: "Low",
+    Medium: "Medium",
+    Good: "Good",
+    Light: "Light",
+    Dark: "Dark",
+    LightPresent: "Light Present",
+    reconnect: "Reconnecting...",
+    allOptimal: "All systems normal and crop conditions are optimal.",
+    healthyMsg: "Plant is healthy & happy",
+    waterMsg: "WATER YOUR PLANT NOW!",
+    phMsg: "Soil pH out of range \u2014 check fertiliser!",
+    batMsg: "Battery low \u2014 charge soon!"
+  },
+  ne: {
+    dashboardTitle: "कृषि दृष्टि ड्यासबोर्ड",
+    lastRead: "अन्तिम रिडिङ: ",
+    testData: "परीक्षण डाटा",
+    live: "लाइभ",
+    mainLabel: "मुख्य",
+    dashboardNav: "ड्यासबोर्ड",
+    reportsNav: "रिपोर्टहरू",
+    alertsNav: "अलर्टहरू",
+    settingsLabel: "सेटिङहरू",
+    configNav: "कन्फिग",
+    deviceNav: "उपकरण",
+    online: "अनलाइन",
+    hotspotInfo: "&#128225; हटस्पट: <strong>कृषि दृष्टि</strong> &nbsp;|&nbsp; पासवर्ड: <strong>plant1234</strong> &nbsp;|&nbsp; खोल्नुहोस्: <strong>http://192.168.4.1</strong>",
+    pinInfo: "&#128204; माटो &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; ब्याट्री &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4",
+    tempLabel: "तापक्रम (DHT22)",
+    optimalTemp: "&nbsp;इष्टतम १५&#8211;३५&#176;C",
+    humLabel: "हावाको ओस/आर्द्रता (DHT22)",
+    optimalHum: "इष्टतम ४०&#8211;७०%",
+    soilLabel: "माटोको ओस (GPIO34)",
+    optimalSoil: "&nbsp;इष्टतम ३५&#8211;६५%",
+    phLabel: "माटोको pH (GPIO35)",
+    optimalPh: "&nbsp;इष्टतम ५.५&#8211;७.५",
+    lightLabel: "प्रकाश (IR सेन्सर)",
+    optimalLight: "&nbsp;प्रकाश पहिचान",
+    batteryLabel: "ब्याट्री स्तर",
+    batterySub: "&nbsp;उपकरण ब्याट्री स्थिति",
+    sensorHistory: "सेन्सर इतिहास",
+    chartSub: "लाइभ रोलिङ विन्डो — अन्तिम ४० रिडिङहरू",
+    legendTemp: "तापक्रम (&#176;C)",
+    legendHum: "आर्द्रता (%)",
+    legendSoil: "माटोको ओस (%)",
+    legendPh: "pH स्तर",
+    legendLight: "प्रकाश",
+    plantHealth: "बिरुवाको स्वास्थ्य",
+    compositeScore: "समग्र स्कोर — सबै ६ सेन्सरहरू",
+    healthText: "स्वास्थ्य",
+    recsTitle: "उपयुक्त सुझावहरू",
+    recsSub: "सेन्सर डाटा र कृषि दिशानिर्देशमा आधारित",
+    // status values
+    Normal: "सामान्य",
+    Alert: "सतर्कता",
+    Moist: "ठिक्क",
+    Dry: "सुक्खा",
+    Wet: "चिलो",
+    Neutral: "तटस्थ",
+    Warning: "चेतावनी",
+    Critical: "गम्भीर",
+    Low: "कम",
+    Medium: "मध्यम",
+    Good: "राम्रो",
+    Light: "उज्यालो",
+    Dark: "अध्यारो",
+    LightPresent: "प्रकाश छ",
+    reconnect: "पुनः जडान गरिँदै...",
+    allOptimal: "सबै प्रणालीहरू सामान्य छन् र बालीको अवस्था इष्टतम छ।",
+    healthyMsg: "बिरुवा स्वस्थ र खुसी छ",
+    waterMsg: "बिरुवामा तुरुन्तै पानी हाल्नुहोस्!",
+    phMsg: "माटोको pH दायरा बाहिर छ — मल जाँच गर्नुहोस्!",
+    batMsg: "ब्याट्री कम छ — चाँडै चार्ज गर्नुहोस्!"
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'en';
+
+function changeLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  updateUILanguage();
+  if (lastData) {
+    applyData(lastData);
+  }
+}
+
+function updateUILanguage() {
+  const dict = TRANSLATIONS[currentLang];
+  document.getElementById('langSelect').value = currentLang;
+  
+  document.getElementById('dashboardTitle').textContent = dict.dashboardTitle;
+  document.getElementById('navLabelMain').textContent = dict.mainLabel;
+  document.getElementById('txtDashboard').textContent = dict.dashboardNav;
+  document.getElementById('txtReports').textContent = dict.reportsNav;
+  document.getElementById('txtAlerts').textContent = dict.alertsNav;
+  document.getElementById('navLabelSettings').textContent = dict.settingsLabel;
+  document.getElementById('txtConfig').textContent = dict.configNav;
+  document.getElementById('txtDevice').textContent = dict.deviceNav;
+  
+  document.getElementById('wifiInfo').innerHTML = dict.hotspotInfo;
+  document.getElementById('pinInfo').innerHTML = dict.pinInfo;
+  
+  document.getElementById('lblTemp').textContent = dict.tempLabel;
+  document.getElementById('lblOptimalTemp').innerHTML = dict.optimalTemp;
+  document.getElementById('lblHum').textContent = dict.humLabel;
+  document.getElementById('lblOptimalHum').textContent = dict.optimalHum;
+  document.getElementById('lblSoil').textContent = dict.soilLabel;
+  document.getElementById('lblOptimalSoil').innerHTML = dict.optimalSoil;
+  document.getElementById('lblPh').textContent = dict.phLabel;
+  document.getElementById('lblOptimalPh').innerHTML = dict.optimalPh;
+  document.getElementById('lblLight').textContent = dict.lightLabel;
+  document.getElementById('lblOptimalLight').innerHTML = dict.optimalLight;
+  document.getElementById('lblBattery').textContent = dict.batteryLabel;
+  document.getElementById('lblBatterySub').innerHTML = dict.batterySub;
+  
+  document.getElementById('lblPlantHealth').textContent = dict.plantHealth;
+  document.getElementById('lblCompositeScore').textContent = dict.compositeScore;
+  document.getElementById('lblHealthText').textContent = dict.healthText;
+  
+  document.getElementById('lblMetTemp').textContent = currentLang === 'en' ? 'Temp' : 'तापक्रम';
+  document.getElementById('lblMetHum').textContent = currentLang === 'en' ? 'Humidity' : 'आर्द्रता';
+  document.getElementById('lblMetSoil').textContent = currentLang === 'en' ? 'Soil' : 'माटोको ओस';
+  document.getElementById('lblMetPh').textContent = currentLang === 'en' ? 'pH' : 'pH स्तर';
+  document.getElementById('lblMetLight').textContent = currentLang === 'en' ? 'Light' : 'प्रकाश';
+  document.getElementById('lblMetBattery').textContent = currentLang === 'en' ? 'Battery' : 'ब्याट्री';
+
+  document.getElementById('lblSensorHistory').textContent = dict.sensorHistory;
+  document.getElementById('lblChartSub').textContent = dict.chartSub;
+  
+  document.getElementById('lblLegTemp').innerHTML = `<div class="legend-dot" style="background:#ef4444"></div> ${dict.legendTemp}`;
+  document.getElementById('lblLegHum').innerHTML = `<div class="legend-dot" style="background:#3b82f6"></div> ${dict.legendHum}`;
+  document.getElementById('lblLegSoil').innerHTML = `<div class="legend-dot" style="background:#22c55e"></div> ${dict.legendSoil}`;
+  document.getElementById('lblLegPh').innerHTML = `<div class="legend-dot" style="background:#8b5cf6"></div> ${dict.legendPh}`;
+  document.getElementById('lblLegLight').innerHTML = `<div class="legend-dot" style="background:#f59e0b"></div> ${dict.legendLight}`;
+
+  document.getElementById('recTitle').textContent = dict.recsTitle;
+  document.getElementById('recSub').textContent = dict.recsSub;
+  
+  document.getElementById('btnTestData').textContent = dict.testData;
+  document.getElementById('txtLive').textContent = dict.live;
+  
+  var statusText = dict.online;
+  var cs = document.getElementById('connStatus');
+  if(cs.textContent.includes('Reconnecting') || cs.textContent.includes('जडान')) {
+    cs.innerHTML = '&#8226; ' + dict.reconnect;
+  } else {
+    cs.innerHTML = '&#8226; ' + dict.online;
+  }
+}
+
+function getRecommendations(d, lang) {
+  const isEn = lang === 'en';
+  let recs = [];
+
+  // Soil Moisture
+  if (d.soil < 30) {
+    recs.push({
+      sensor: isEn ? "Soil Moisture" : "माटोको ओस",
+      val: d.soil + "%",
+      status: isEn ? "Low" : "कम",
+      color: "#ef4444",
+      action: isEn ? "Water the plant immediately. Soil is too dry." : "बोटबिरुवामा तुरुन्तै पानी हाल्नुहोस्। माटो धेरै सुक्खा छ।"
+    });
+  } else if (d.soil >= 30 && d.soil <= 60) {
+    recs.push({
+      sensor: isEn ? "Soil Moisture" : "माटोको ओस",
+      val: d.soil + "%",
+      status: isEn ? "Optimal" : "राम्रो",
+      color: "#22c55e",
+      action: isEn ? "Soil moisture is ideal. No watering needed." : "माटोको ओस उपयुक्त छ। पानी हाल्न आवश्यक छैन।"
+    });
+  } else {
+    recs.push({
+      sensor: isEn ? "Soil Moisture" : "माटोको ओस",
+      val: d.soil + "%",
+      status: isEn ? "High" : "धेरै",
+      color: "#f59e0b",
+      action: isEn ? "Soil is too wet. Avoid watering to prevent root rot." : "माटो धेरै चिसो छ। जरा कुहिनबाट जोगाउन पानी नहाल्नुहोस्।"
+    });
+  }
+
+  // Temperature
+  if (d.temp < 15) {
+    recs.push({
+      sensor: isEn ? "Temperature" : "तापक्रम",
+      val: d.temp + "°C",
+      status: isEn ? "Cold" : "चिसो",
+      color: "#ef4444",
+      action: isEn ? "Temperature is too low. Move plant to a warmer environment." : "तापक्रम धेरै कम छ। बोटलाई न्यानो वातावरणमा सार्नुहोस्।"
+    });
+  } else if (d.temp >= 15 && d.temp <= 35) {
+    recs.push({
+      sensor: isEn ? "Temperature" : "तापक्रम",
+      val: d.temp + "°C",
+      status: isEn ? "Optimal" : "राम्रो",
+      color: "#22c55e",
+      action: isEn ? "Temperature is in the optimal range (15-35°C)." : "तापक्रम उपयुक्त दायरामा छ (१५-३५°C)।"
+    });
+  } else {
+    recs.push({
+      sensor: isEn ? "Temperature" : "तापक्रम",
+      val: d.temp + "°C",
+      status: isEn ? "Hot" : "तातो",
+      color: "#ef4444",
+      action: isEn ? "Temperature is too high. Provide shade and ensure proper ventilation." : "तापक्रम धेरै उच्च छ। छहारी दिनुहोस् र हावा आवतजावत मिलाउनुहोस्।"
+    });
+  }
+
+  // pH
+  if (d.ph < 5.5) {
+    recs.push({
+      sensor: isEn ? "Soil pH" : "माटोको pH",
+      val: parseFloat(d.ph).toFixed(2),
+      status: isEn ? "Acidic" : "अम्लीय",
+      color: "#ef4444",
+      action: isEn ? "Soil is acidic. Apply agricultural lime (calcium carbonate) to increase pH." : "माटो अम्लीय छ। pH बढाउन कृषि चुन (क्याल्सियम कार्बोनेट) प्रयोग गर्नुहोस्।"
+    });
+  } else if (d.ph >= 5.5 && d.ph <= 7.5) {
+    recs.push({
+      sensor: isEn ? "Soil pH" : "माटोको pH",
+      val: parseFloat(d.ph).toFixed(2),
+      status: isEn ? "Optimal" : "राम्रो",
+      color: "#22c55e",
+      action: isEn ? "pH is optimal (5.5-7.5) for most crop varieties." : "pH स्तर अधिकांश बालीका लागि उपयुक्त छ (५.५-७.५)।"
+    });
+  } else {
+    recs.push({
+      sensor: isEn ? "Soil pH" : "माटोको pH",
+      val: parseFloat(d.ph).toFixed(2),
+      status: isEn ? "Alkaline" : "क्षारीय",
+      color: "#ef4444",
+      action: isEn ? "Soil is alkaline. Add organic compost or elemental sulfur to lower pH." : "माटो क्षारीय छ। pH घटाउन प्राङ्गारिक मल वा सल्फर थप्नुहोस्।"
+    });
+  }
+
+  // Humidity
+  if (d.humidity < 40) {
+    recs.push({
+      sensor: isEn ? "Humidity" : "आर्द्रता",
+      val: d.humidity + "%",
+      status: isEn ? "Low" : "कम",
+      color: "#f59e0b",
+      action: isEn ? "Air is dry. Mist plant leaves occasionally or use a humidifier." : "हावा सुक्खा छ। पातहरूमा पानीको फोहोरा दिनुहोस् वा ह्युमिडिफायर प्रयोग गर्नुहोस्।"
+    });
+  } else if (d.humidity >= 40 && d.humidity <= 70) {
+    recs.push({
+      sensor: isEn ? "Humidity" : "आर्द्रता",
+      val: d.humidity + "%",
+      status: isEn ? "Optimal" : "राम्रो",
+      color: "#22c55e",
+      action: isEn ? "Humidity is ideal (40-70%)." : "आर्द्रता उपयुक्त छ (४०-७०%)।"
+    });
+  } else {
+    recs.push({
+      sensor: isEn ? "Humidity" : "आर्द्रता",
+      val: d.humidity + "%",
+      status: isEn ? "High" : "बढी",
+      color: "#f59e0b",
+      action: isEn ? "Humidity is high. Ensure good spacing and air flow to prevent fungus." : "आर्द्रता धेरै छ। ढुसी लाग्न नदिन बिरुवाहरूबीच पर्याप्त दूरी र हावाको बहाव मिलाउनुहोस्।"
+    });
+  }
+
+  // Light
+  if (d.lux === 0) {
+    recs.push({
+      sensor: isEn ? "Light" : "प्रकाश",
+      val: isEn ? "Dark" : "अध्यारो",
+      status: isEn ? "Low Light" : "कम प्रकाश",
+      color: "#ef4444",
+      action: isEn ? "Too dark. Ensure the plant gets direct/indirect sunlight, or use grow lights." : "धेरै अध्यारो भयो। बिरुवालाई पर्याप्त सूर्यको प्रकाशमा राख्नुहोस् वा ग्रो लाइट प्रयोग गर्नुहोस्।"
+    });
+  } else {
+    recs.push({
+      sensor: isEn ? "Light" : "प्रकाश",
+      val: isEn ? "Light" : "उज्यालो",
+      status: isEn ? "Adequate" : "पर्याप्त",
+      color: "#22c55e",
+      action: isEn ? "Light conditions are sufficient for photosynthesis." : "प्रकाशको अवस्था प्रकाश संश्लेषणका लागि पर्याप्त छ।"
+    });
+  }
+
+  // Battery
+  if (d.batPct < 20) {
+    recs.push({
+      sensor: isEn ? "Battery" : "ब्याट्री",
+      val: d.batPct + "%",
+      status: isEn ? "Critical" : "कमजोर",
+      color: "#ef4444",
+      action: isEn ? "Battery is critically low. Plug in charger immediately to keep device running." : "ब्याट्री एकदम कम छ। उपकरण बन्द हुन नदिन तुरुन्तै चार्जमा राख्नुहोस्।"
+    });
+  }
+
+  return recs;
+}
+
 function colorFor(type,val){
   if(type==='temp')   return (val<15||val>35)?'#ef4444':'#22c55e';
   if(type==='hum')    return (val<30||val>80)?'#f59e0b':'#3b82f6';
@@ -420,7 +790,17 @@ function pushChart(t,h,s,ph,lux){
   document.getElementById('luxLine').setAttribute('points',pts(lD,0,80));
 }
 
+var lastData = null;
 function applyData(d){
+  lastData = d;
+  const dict = TRANSLATIONS[currentLang];
+  
+  var tempStatusText = dict[d.tempStatus] || d.tempStatus;
+  var soilStatusText = dict[d.soilStatus] || d.soilStatus;
+  var phStatusText = dict[d.phStatus] || d.phStatus;
+  var luxStatusText = dict[luxLabel(d.lux)] || luxLabel(d.lux);
+  var batStatusText = dict[d.batStatus] || d.batStatus;
+
   var tc=colorFor('temp',d.temp),hc=colorFor('hum',d.humidity),
       sc=colorFor('soil',d.soil),pc=colorFor('ph',d.ph),
       lc=colorFor('lux',d.lux),bc=colorFor('bat',d.batPct),
@@ -429,8 +809,8 @@ function applyData(d){
 
   var tv=document.getElementById('tempVal');
   tv.textContent=d.temp;setColor(tv,tc);flash(tv);
-  document.getElementById('tempStatus').textContent=d.tempStatus;setColor(document.getElementById('tempStatus'),tc);
-  document.getElementById('tempSubStatus').textContent=d.tempStatus;setColor(document.getElementById('tempSubStatus'),tc);
+  document.getElementById('tempStatus').textContent=tempStatusText;setColor(document.getElementById('tempStatus'),tc);
+  document.getElementById('tempSubStatus').textContent=tempStatusText;setColor(document.getElementById('tempSubStatus'),tc);
   document.getElementById('tempBar').style.cssText='width:'+Math.min((d.temp/50)*100,100)+'%;background:'+tc;
   document.getElementById('tempDot').style.background=tc;
 
@@ -442,29 +822,30 @@ function applyData(d){
 
   var sv=document.getElementById('soilVal');
   sv.textContent=d.soil;setColor(sv,sc);flash(sv);
-  document.getElementById('soilStatus').textContent=d.soilStatus;setColor(document.getElementById('soilStatus'),sc);
-  document.getElementById('soilSubStatus').textContent=d.soilStatus;setColor(document.getElementById('soilSubStatus'),sc);
+  document.getElementById('soilStatus').textContent=soilStatusText;setColor(document.getElementById('soilStatus'),sc);
+  document.getElementById('soilSubStatus').textContent=soilStatusText;setColor(document.getElementById('soilSubStatus'),sc);
   document.getElementById('soilBar').style.cssText='width:'+d.soil+'%;background:'+sc;
   document.getElementById('soilDot').style.background=sc;
 
   var pv=document.getElementById('phVal');
   pv.textContent=parseFloat(d.ph).toFixed(2);setColor(pv,pc);flash(pv);
-  document.getElementById('phStatus').textContent=d.phStatus;setColor(document.getElementById('phStatus'),pc);
-  document.getElementById('phSubStatus').textContent=d.phStatus;setColor(document.getElementById('phSubStatus'),pc);
+  document.getElementById('phStatus').textContent=phStatusText;setColor(document.getElementById('phStatus'),pc);
+  document.getElementById('phSubStatus').textContent=phStatusText;setColor(document.getElementById('phSubStatus'),pc);
   document.getElementById('phBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
   document.getElementById('phDot').style.background=pc;
 
   var lv=document.getElementById('luxVal');
   var ll=luxLabel(d.lux);
-  lv.textContent=ll;setColor(lv,lc);flash(lv);
-  document.getElementById('lightStatus').textContent=ll;setColor(document.getElementById('lightStatus'),lc);
-  document.getElementById('luxSubStatus').textContent=ll==='Light'?'Light Present':'Dark';setColor(document.getElementById('luxSubStatus'),lc);
+  var llTrans = dict[ll] || ll;
+  lv.textContent=llTrans;setColor(lv,lc);flash(lv);
+  document.getElementById('lightStatus').textContent=llTrans;setColor(document.getElementById('lightStatus'),lc);
+  document.getElementById('luxSubStatus').textContent=ll==='Light'? (currentLang === 'en' ? 'Light Present' : 'प्रकाश छ') : (currentLang === 'en' ? 'Dark' : 'अध्यारो');setColor(document.getElementById('luxSubStatus'),lc);
   document.getElementById('luxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
   document.getElementById('luxDot').style.background=lc;
 
   var bv=document.getElementById('batPctVal');
   bv.textContent=d.batPct;setColor(bv,bc);flash(bv);
-  document.getElementById('batStatusLabel').textContent=d.batStatus;setColor(document.getElementById('batStatusLabel'),bc);
+  document.getElementById('batStatusLabel').textContent=batStatusText;setColor(document.getElementById('batStatusLabel'),bc);
   document.getElementById('batVoltVal').textContent=parseFloat(d.batV).toFixed(2)+'V';setColor(document.getElementById('batVoltVal'),bc);
   document.getElementById('batBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('batDot').style.background=bc;
@@ -484,31 +865,51 @@ function applyData(d){
   document.getElementById('mPhBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
   document.getElementById('mPhVal').textContent=parseFloat(d.ph).toFixed(2);
   document.getElementById('mLuxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
-  document.getElementById('mLuxVal').textContent=d.lux===1?'Light':'Dark';
+  document.getElementById('mLuxVal').textContent=llTrans;
   document.getElementById('mBatBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('mBatVal').textContent=d.batPct+'%';
+
+  // Recommendations
+  var recs = getRecommendations(d, currentLang);
+  var recList = document.getElementById('recList');
+  recList.innerHTML = '';
+  if (recs.length === 0) {
+    recList.innerHTML = `<div style="font-size:13px; color:#16a34a; font-weight:500;">&#10004; ${dict.allOptimal}</div>`;
+  } else {
+    recs.forEach(function(rec) {
+      recList.innerHTML += `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid var(--border); border-left: 4px solid ${rec.color}; padding:8px 12px; border-radius:6px; font-size:12px;">
+          <div>
+            <strong style="color:var(--text);">${rec.sensor} (${rec.val}):</strong> 
+            <span style="color:var(--muted); margin-left:4px;">${rec.action}</span>
+          </div>
+          <span style="background:${rec.color}15; color:${rec.color}; padding:2px 8px; border-radius:12px; font-weight:700; font-size:10px; text-transform:uppercase;">${rec.status}</span>
+        </div>
+      `;
+    });
+  }
 
   var banner=document.getElementById('alertBanner');
   var aIcon=document.getElementById('alertIcon');
   var aMsg=document.getElementById('alertMsg');
   if(d.soil<30){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #ef4444;background:#fef2f2;color:#dc2626;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='WATER YOUR PLANT NOW!';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent=dict.waterMsg;
   }else if(d.ph<5.0||d.ph>8.5){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Soil pH out of range \u2014 check fertiliser!';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent=dict.phMsg;
   }else if(d.batPct<20){
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #f59e0b;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent='Battery low \u2014 charge soon!';
+    aIcon.textContent='\u26A0\uFE0F';aMsg.textContent=dict.batMsg;
   }else{
     banner.style.cssText='padding:12px 18px;border-radius:12px;border:1.5px solid #22c55e;background:#f0fdf4;color:#16a34a;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px';
-    aIcon.textContent='\u2705';aMsg.innerHTML='Plant is healthy &amp; happy';
+    aIcon.textContent='\u2705';aMsg.innerHTML=dict.healthyMsg;
   }
 
   pushChart(d.temp,d.humidity,d.soil,d.ph,d.lux);
 
   var n=new Date();
-  document.getElementById('lastRead').textContent='Last reading: '+
+  document.getElementById('lastRead').textContent=dict.lastRead+
     String(n.getHours()).padStart(2,'0')+':'+
     String(n.getMinutes()).padStart(2,'0')+':'+
     String(n.getSeconds()).padStart(2,'0');
@@ -523,7 +924,8 @@ function generateTestData(){
       console.log('Mock data generated:',d);
       fails=0;
       var cs=document.getElementById('connStatus');
-      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      const dict = TRANSLATIONS[currentLang];
+      cs.textContent='\u2022 ' + dict.online;cs.style.color='#22c55e';
       if(d && typeof d==='object'){
         var data={
           temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
@@ -550,7 +952,8 @@ function fetchData(){
       console.log('Latest data:',d);
       fails=0;
       var cs=document.getElementById('connStatus');
-      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      const dict = TRANSLATIONS[currentLang];
+      cs.textContent='\u2022 ' + dict.online;cs.style.color='#22c55e';
       if(d && typeof d==='object'){
         var data={
           temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
@@ -570,7 +973,8 @@ function fetchData(){
       fails++;
       if(fails>=3){
         var cs=document.getElementById('connStatus');
-        cs.textContent='\u2022 Reconnecting...';cs.style.color='#f59e0b';
+        const dict = TRANSLATIONS[currentLang];
+        cs.textContent='\u2022 ' + dict.reconnect;cs.style.color='#f59e0b';
       }
     });
 }
@@ -585,7 +989,8 @@ function streamData(){
       console.log('Parsed data:',d);
       fails=0;
       var cs=document.getElementById('connStatus');
-      cs.textContent='\u2022 Online';cs.style.color='#22c55e';
+      const dict = TRANSLATIONS[currentLang];
+      cs.textContent='\u2022 ' + dict.online;cs.style.color='#22c55e';
       var data={
         temp:d.temp||0,humidity:d.humidity||0,soil:d.soil||0,ph:d.ph||0,lux:d.lux!==undefined?d.lux:0,
         batPct:d.batPct||0,batV:d.batV||0,health:d.health||0,
@@ -604,7 +1009,8 @@ function streamData(){
     fails++;
     if(fails>=3){
       var cs=document.getElementById('connStatus');
-      cs.textContent='\u2022 Reconnecting...';cs.style.color='#f59e0b';
+      const dict = TRANSLATIONS[currentLang];
+      cs.textContent='\u2022 ' + dict.reconnect;cs.style.color='#f59e0b';
     }
     stream.close();
     setTimeout(streamData,3000);
@@ -618,7 +1024,6 @@ var pageSize=10;
 
 function addToReportData(d){
   // Data is now fetched from backend API - no need to maintain local cache
-  // This function kept for backwards compatibility if needed
 }
 
 function nextPage(){
@@ -665,10 +1070,10 @@ function downloadFile(content,filename,type){
   URL.revokeObjectURL(url);
 }
 
-
-fetchData();
-setInterval(fetchData,3000);
-setTimeout(streamData,500);
+// Initialize Language on DOM Load
+document.addEventListener('DOMContentLoaded', function() {
+  updateUILanguage();
+});
 </script>
 </body>
 </html>
