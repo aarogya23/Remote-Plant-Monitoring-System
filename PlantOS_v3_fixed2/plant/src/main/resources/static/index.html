@@ -530,7 +530,7 @@ function changeLanguage(lang) {
 function updateUILanguage() {
   const dict = TRANSLATIONS[currentLang];
   document.getElementById('langSelect').value = currentLang;
-  
+
   document.getElementById('dashboardTitle').textContent = dict.dashboardTitle;
   document.getElementById('navLabelMain').textContent = dict.mainLabel;
   document.getElementById('txtDashboard').textContent = dict.dashboardNav;
@@ -539,10 +539,10 @@ function updateUILanguage() {
   document.getElementById('navLabelSettings').textContent = dict.settingsLabel;
   document.getElementById('txtConfig').textContent = dict.configNav;
   document.getElementById('txtDevice').textContent = dict.deviceNav;
-  
+
   document.getElementById('wifiInfo').innerHTML = dict.hotspotInfo;
   document.getElementById('pinInfo').innerHTML = dict.pinInfo;
-  
+
   document.getElementById('lblTemp').textContent = dict.tempLabel;
   document.getElementById('lblOptimalTemp').innerHTML = dict.optimalTemp;
   document.getElementById('lblHum').textContent = dict.humLabel;
@@ -555,11 +555,11 @@ function updateUILanguage() {
   document.getElementById('lblOptimalLight').innerHTML = dict.optimalLight;
   document.getElementById('lblBattery').textContent = dict.batteryLabel;
   document.getElementById('lblBatterySub').innerHTML = dict.batterySub;
-  
+
   document.getElementById('lblPlantHealth').textContent = dict.plantHealth;
   document.getElementById('lblCompositeScore').textContent = dict.compositeScore;
   document.getElementById('lblHealthText').textContent = dict.healthText;
-  
+
   document.getElementById('lblMetTemp').textContent = currentLang === 'en' ? 'Temp' : 'तापक्रम';
   document.getElementById('lblMetHum').textContent = currentLang === 'en' ? 'Humidity' : 'आर्द्रता';
   document.getElementById('lblMetSoil').textContent = currentLang === 'en' ? 'Soil' : 'माटोको ओस';
@@ -569,7 +569,7 @@ function updateUILanguage() {
 
   document.getElementById('lblSensorHistory').textContent = dict.sensorHistory;
   document.getElementById('lblChartSub').textContent = dict.chartSub;
-  
+
   document.getElementById('lblLegTemp').innerHTML = `<div class="legend-dot" style="background:#ef4444"></div> ${dict.legendTemp}`;
   document.getElementById('lblLegHum').innerHTML = `<div class="legend-dot" style="background:#3b82f6"></div> ${dict.legendHum}`;
   document.getElementById('lblLegSoil').innerHTML = `<div class="legend-dot" style="background:#22c55e"></div> ${dict.legendSoil}`;
@@ -578,10 +578,10 @@ function updateUILanguage() {
 
   document.getElementById('recTitle').textContent = dict.recsTitle;
   document.getElementById('recSub').textContent = dict.recsSub;
-  
+
   document.getElementById('btnTestData').textContent = dict.testData;
   document.getElementById('txtLive').textContent = dict.live;
-  
+
   var statusText = dict.online;
   var cs = document.getElementById('connStatus');
   if(cs.textContent.includes('Reconnecting') || cs.textContent.includes('जडान')) {
@@ -794,7 +794,7 @@ var lastData = null;
 function applyData(d){
   lastData = d;
   const dict = TRANSLATIONS[currentLang];
-  
+
   var tempStatusText = dict[d.tempStatus] || d.tempStatus;
   var soilStatusText = dict[d.soilStatus] || d.soilStatus;
   var phStatusText = dict[d.phStatus] || d.phStatus;
@@ -880,7 +880,7 @@ function applyData(d){
       recList.innerHTML += `
         <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid var(--border); border-left: 4px solid ${rec.color}; padding:8px 12px; border-radius:6px; font-size:12px;">
           <div>
-            <strong style="color:var(--text);">${rec.sensor} (${rec.val}):</strong> 
+            <strong style="color:var(--text);">${rec.sensor} (${rec.val}):</strong>
             <span style="color:var(--muted); margin-left:4px;">${rec.action}</span>
           </div>
           <span style="background:${rec.color}15; color:${rec.color}; padding:2px 8px; border-radius:12px; font-weight:700; font-size:10px; text-transform:uppercase;">${rec.status}</span>
