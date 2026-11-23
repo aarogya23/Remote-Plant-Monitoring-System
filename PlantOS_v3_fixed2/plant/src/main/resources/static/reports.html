@@ -910,8 +910,9 @@
         <div><span class="card-value" id="reportAvgPH">--</span><span class="card-unit">pH</span></div>
       </div>
       <div class="card">
-        <div class="card-label" id="lblAvgLight">Avg Light</div>
-        <div><span class="card-value" id="reportAvgLux">--</span><span class="card-unit" id="reportAvgLuxUnit"></span></div>
+        <div class="card-label" id="lblAvgLight">Time in Light</div>
+        <div><span class="card-value" id="reportAvgLux">--</span><span class="card-unit" id="reportAvgLuxUnit">%</span></div>
+        <div id="reportLightHours" style="margin-top:6px;font-size:11.5px;font-weight:600;color:var(--muted)"></div>
       </div>
       <div class="card">
         <div class="card-label" id="lblAvgBat">Avg Battery</div>
@@ -976,7 +977,7 @@
       avgHum: "Avg Humidity",
       avgSoil: "Avg Soil Moisture",
       avgPh: "Avg pH",
-      avgLight: "Avg Light",
+      avgLight: "Time in Light",
       avgBat: "Avg Battery",
       histTitle: "Historical Data",
       histSub: "Sensor readings for selected period",
@@ -1021,7 +1022,7 @@
       avgHum: "औसत आर्द्रता",
       avgSoil: "औसत माटोको ओस",
       avgPh: "औसत pH",
-      avgLight: "औसत प्रकाश",
+      avgLight: "उज्यालोमा बितेको समय",
       avgBat: "औसत ब्याट्री",
       histTitle: "ऐतिहासिक डाटा",
       histSub: "चयन गरिएको अवधिको लागि सेन्सर रिडिङहरू",
@@ -1170,6 +1171,12 @@
     loadStats(); loadTable();
   }
 
+  // 3.5 h -> "3h 30m"
+  function fmtHours(h) {
+    const mins = Math.round((h || 0) * 60);
+    return Math.floor(mins / 60) + 'h ' + String(mins % 60).padStart(2, '0') + 'm';
+  }
+
   function loadStats() {
     fetch('/api/report/statistics?period=' + activePeriod)
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -1177,13 +1184,18 @@
               const set = (id, v, d) => document.getElementById(id).textContent = v !== undefined ? v.toFixed(d) : '--';
               set('reportAvgTemp', s.averageTemp, 1); set('reportAvgHum', s.averageHumidity, 0);
               set('reportAvgSoil', s.averageSoil, 0); set('reportAvgPH', s.averagePh, 2);
-              set('reportAvgLux', s.averageLux, 1);   set('reportAvgBat', s.averageBattery, 0);
+              set('reportAvgLux', s.lightSharePct, 0);   set('reportAvgBat', s.averageBattery, 0);
+              const lh = document.getElementById('reportLightHours');
+              lh.textContent = (s.lightHours || s.darkHours)
+                ? '\u2600 ' + fmtHours(s.lightHours) + '  \u263E ' + fmtHours(s.darkHours)
+                : '';
               const recCountText = currentLang === 'en' ? ' records' : ' रेकर्डहरू';
               document.getElementById('dataCountDisplay').textContent = (s.count || 0) + recCountText;
             })
             .catch(() => {
               ['reportAvgTemp','reportAvgHum','reportAvgSoil','reportAvgPH','reportAvgLux','reportAvgBat']
                       .forEach(id => document.getElementById(id).textContent = '--');
+              document.getElementById('reportLightHours').textContent = '';
               document.getElementById('dataCountDisplay').textContent = currentLang === 'en' ? 'No data' : 'डाटा छैन';
             });
   }

@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,6 +79,13 @@ public class ReportService {
     stats.put("maxHumidity", round(maxHumidity, 1));
     stats.put("minSoil", round(minSoil, 1));
     stats.put("maxSoil", round(maxSoil, 1));
+
+    long[] lightDark = sumLightDarkSeconds(readings);
+    long trackedSec = lightDark[0] + lightDark[1];
+    stats.put("lightHours", round(lightDark[0] / 3600.0, 2));
+    stats.put("darkHours", round(lightDark[1] / 3600.0, 2));
+    // Share of tracked time in light; falls back to the share of "light" readings when no timer data exists
+    stats.put("lightSharePct", trackedSec > 0 ? round(lightDark[0] * 100.0 / trackedSec, 1) : round(avgLux * 100, 1));
 
     return stats;
   }
@@ -160,6 +168,26 @@ public class ReportService {
   }
 
   // Helper methods
+
+  /**
+   * Total light and dark seconds covered by the readings. The device sends running totals since
+   * power-on, so we add up the increase between consecutive readings; a drop means the device
+   * rebooted and its counters restarted from zero.
+   */
+  private long[] sumLightDarkSeconds(List<SensorReading> readings) {
+    List<SensorReading> timed = readings.stream()
+        .filter(r -> r.getLightSec() != null && r.getDarkSec() != null)
+        .sorted(Comparator.comparing(SensorReading::getTs))
+        .toList();
+    long light = 0, dark = 0;
+    for (int i = 1; i < timed.size(); i++) {
+      SensorReading prev = timed.get(i - 1), cur = timed.get(i);
+      boolean rebooted = cur.getLightSec() < prev.getLightSec() || cur.getDarkSec() < prev.getDarkSec();
+      light += rebooted ? cur.getLightSec() : cur.getLightSec() - prev.getLightSec();
+      dark  += rebooted ? cur.getDarkSec()  : cur.getDarkSec()  - prev.getDarkSec();
+    }
+    return new long[] { light, dark };
+  }
   private Instant calculateStartTime(String period) {
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime startDateTime = null;
@@ -223,6 +251,9 @@ public class ReportService {
     stats.put("maxHumidity", 0);
     stats.put("minSoil", 0);
     stats.put("maxSoil", 0);
+    stats.put("lightHours", 0);
+    stats.put("darkHours", 0);
+    stats.put("lightSharePct", 0);
     return stats;
   }
 }

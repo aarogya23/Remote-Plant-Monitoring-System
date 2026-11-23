@@ -1,0 +1,29 @@
+/* Global base. Page themes live in styles/dashboard.css and styles/reports.css,
+   scoped under .theme-dashboard / .theme-reports on the app shell. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #f4f6f9;
+}
+body:has(.theme-reports) { background: #f2f5f0; }
+
+#root { min-height: 100vh; }
+
+.app-shell { display: flex; min-height: 100vh; }
+
+button:disabled { opacity: .65; cursor: wait; }
+
+@keyframes kd-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(.85); } }
+@keyframes kd-flash-update { 0% { opacity: 1; } 30% { opacity: .4; } 100% { opacity: 1; } }
+@keyframes kd-pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(76,175,80,.2); }
+  50%      { box-shadow: 0 0 0 5px rgba(76,175,80,.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

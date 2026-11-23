@@ -29,6 +29,11 @@ public class PlantosController {
   private final SensorReadingRepository repository;
   private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
+  // Running light/dark totals for /api/mock, so fake data behaves like the device's clock
+  private long mockLightSec = 0;
+  private long mockDarkSec = 0;
+  private long mockLastMillis = 0;
+
   public PlantosController(SensorReadingRepository repository) {
     this.repository = repository;
   }
@@ -45,21 +50,15 @@ public class PlantosController {
     reading.setBatV(req.batV);
     reading.setBatPct(req.batPct);
     reading.setHealth(req.health);
+    reading.setLightSec(req.lightSec);
+    reading.setDarkSec(req.darkSec);
+    reading.setLightPct(req.lightPct);
+    reading.setUptimeSec(req.uptimeSec);
 
     repository.save(reading);
 
     // Broadcast the new reading to all connected SSE clients
-    String json = "{\"id\":" + reading.getId() + ",\"temp\":" + reading.getTemp() + ",\"humidity\":" + reading.getHumidity() 
-      + ",\"soil\":" + reading.getSoil() + ",\"ph\":" + reading.getPh() + ",\"lux\":" + reading.getLux() 
-      + ",\"batV\":" + reading.getBatV() + ",\"batPct\":" + reading.getBatPct() + ",\"health\":" + reading.getHealth() + "}";
-    
-    for (SseEmitter emitter : emitters) {
-      try {
-        emitter.send(SseEmitter.event().data(json).build());
-      } catch (IOException e) {
-        emitters.remove(emitter);
-      }
-    }
+    broadcast(reading);
 
     return ResponseEntity.ok().build();
   }
@@ -91,7 +90,18 @@ public class PlantosController {
     reading.setHumidity(50 + Math.random() * 20);
     reading.setSoil(45 + (int)(Math.random() * 20));
     reading.setPh(6.5 + Math.random() * 1);
-    reading.setLux(Math.random() > 0.5 ? 1.0 : 0.0);
+    boolean light = Math.random() > 0.5;
+    reading.setLux(light ? 1.0 : 0.0);
+    // Simulate the device's light/dark clock: add the time since the last mock to the current state
+    long now = System.currentTimeMillis();
+    long dt = mockLastMillis == 0 ? 0 : (now - mockLastMillis) / 1000;
+    mockLastMillis = now;
+    if (light) mockLightSec += dt; else mockDarkSec += dt;
+    long total = mockLightSec + mockDarkSec;
+    reading.setLightSec(mockLightSec);
+    reading.setDarkSec(mockDarkSec);
+    reading.setLightPct(total == 0 ? 0 : (int) (mockLightSec * 100 / total));
+    reading.setUptimeSec(total);
     reading.setBatV(7.8 + Math.random() * 0.4);
     reading.setBatPct(75 + (int)(Math.random() * 25));
     reading.setHealth(80 + (int)(Math.random() * 20));
@@ -99,17 +109,7 @@ public class PlantosController {
     repository.save(reading);
 
     // Broadcast to SSE clients
-    String json = "{\"id\":" + reading.getId() + ",\"temp\":" + reading.getTemp() + ",\"humidity\":" + reading.getHumidity() 
-      + ",\"soil\":" + reading.getSoil() + ",\"ph\":" + reading.getPh() + ",\"lux\":" + reading.getLux() 
-      + ",\"batV\":" + reading.getBatV() + ",\"batPct\":" + reading.getBatPct() + ",\"health\":" + reading.getHealth() + "}";
-    
-    for (SseEmitter emitter : emitters) {
-      try {
-        emitter.send(SseEmitter.event().data(json).build());
-      } catch (IOException e) {
-        emitters.remove(emitter);
-      }
-    }
+    broadcast(reading);
 
     return ResponseEntity.ok(reading);
   }
@@ -119,5 +119,20 @@ public class PlantosController {
     int safeLimit = Math.max(1, Math.min(limit, 200));
     return repository.history((Pageable) PageRequest.of(0, safeLimit));
   }
-}
 
+  private void broadcast(SensorReading reading) {
+    String json = "{\"id\":" + reading.getId() + ",\"temp\":" + reading.getTemp() + ",\"humidity\":" + reading.getHumidity()
+      + ",\"soil\":" + reading.getSoil() + ",\"ph\":" + reading.getPh() + ",\"lux\":" + reading.getLux()
+      + ",\"batV\":" + reading.getBatV() + ",\"batPct\":" + reading.getBatPct() + ",\"health\":" + reading.getHealth()
+      + ",\"lightSec\":" + reading.getLightSec() + ",\"darkSec\":" + reading.getDarkSec()
+      + ",\"lightPct\":" + reading.getLightPct() + ",\"uptimeSec\":" + reading.getUptimeSec() + "}";
+
+    for (SseEmitter emitter : emitters) {
+      try {
+        emitter.send(SseEmitter.event().data(json).build());
+      } catch (IOException e) {
+        emitters.remove(emitter);
+      }
+    }
+  }
+}

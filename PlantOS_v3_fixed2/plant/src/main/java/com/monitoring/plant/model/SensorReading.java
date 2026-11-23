@@ -29,6 +29,12 @@ public class SensorReading {
   private int batPct;
   private int health;
 
+  // Light/dark time accumulated on the device since power-on (null for older rows)
+  private Long lightSec;
+  private Long darkSec;
+  private Integer lightPct;
+  private Long uptimeSec;
+
   public Long getId() {
     return id;
   }
@@ -108,5 +114,36 @@ public class SensorReading {
   public void setHealth(int health) {
     this.health = health;
   }
-}
 
+  public Long getLightSec() {
+    return lightSec;
+  }
+
+  public void setLightSec(Long lightSec) {
+    this.lightSec = lightSec;
+  }
+
+  public Long getDarkSec() {
+    return darkSec;
+  }
+
+  public void setDarkSec(Long darkSec) {
+    this.darkSec = darkSec;
+  }
+
+  public Integer getLightPct() {
+    return lightPct;
+  }
+
+  public void setLightPct(Integer lightPct) {
+    this.lightPct = lightPct;
+  }
+
+  public Long getUptimeSec() {
+    return uptimeSec;
+  }
+
+  public void setUptimeSec(Long uptimeSec) {
+    this.uptimeSec = uptimeSec;
+  }
+}

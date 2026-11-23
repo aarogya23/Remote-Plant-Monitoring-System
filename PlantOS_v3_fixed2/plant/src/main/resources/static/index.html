@@ -53,6 +53,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .card-value{font-size:clamp(28px,4vw,34px);font-weight:800;font-family:var(--mono);letter-spacing:-1px;line-height:1;transition:color .3s;word-break:break-word}
 .card-unit{font-size:15px;font-weight:500;color:var(--muted);margin-left:2px}
 .card-sub{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;flex-wrap:wrap}
+.light-timers{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.light-timer{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;font-family:var(--mono);font-size:12.5px;font-weight:600;white-space:nowrap}
+.light-timer.active{border-color:currentColor}
+.light-timer .lt-icon{font-family:var(--font);font-size:13px}
+#lightTimerOn{color:#d97706}
+#darkTimerOn{color:#475569}
 .card-bar-track{height:5px;background:#f1f5f9;border-radius:10px;margin-top:10px;overflow:hidden}
 .card-bar-fill{height:100%;border-radius:10px;transition:width .6s ease,background .3s}
 .status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .3s}
@@ -272,11 +278,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
         </div>
         <div class="card-label" id="lblLight">Light (IR Sensor)</div>
         <div><span class="card-value" id="luxVal" style="color:#22c55e">--</span><span class="card-unit" id="luxUnit"></span></div>
+        <div class="light-timers">
+          <div class="light-timer" id="lightTimerOn" title="Time in light since device power-on"><span class="lt-icon">&#9728;</span><span id="lightTimeVal">--:--:--</span></div>
+          <div class="light-timer" id="darkTimerOn" title="Time in dark since device power-on"><span class="lt-icon">&#9790;</span><span id="darkTimeVal">--:--:--</span></div>
+        </div>
         <div class="card-bar-track"><div class="card-bar-fill" id="luxBar" style="width:0%;background:#22c55e"></div></div>
         <div class="card-sub">
           <div class="status-dot" id="luxDot" style="background:#22c55e"></div>
           <span id="luxSubStatus" style="color:#22c55e">--</span>
-          <span style="color:var(--muted);font-weight:400" id="lblOptimalLight">&nbsp;Light detection</span>
+          <span style="color:var(--muted);font-weight:400" id="lblOptimalLight">&nbsp;in light since power-on</span>
         </div>
       </div>
       <div class="card">
@@ -384,7 +394,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
     <!-- Report Section -->
     </div>
 
-    <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; Krishi Drishti &nbsp;|&nbsp; http://</div>
+    <div class="ip-footer">ESP32-AGRO &nbsp;|&nbsp; Krishi Drishti &nbsp;|&nbsp; <span id="siteAddr">http://</span></div>
 
   </div>
 </div>
@@ -406,7 +416,7 @@ const TRANSLATIONS = {
     deviceNav: "Device",
     online: "Online",
     hotspotInfo: "&#128225; Hotspot: <strong>Krishi Drishti</strong> &nbsp;|&nbsp; Password: <strong>plant1234</strong> &nbsp;|&nbsp; Open: <strong>http://192.168.4.1</strong>",
-    pinInfo: "&#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4",
+    pinInfo: "&#128204; Soil &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; Battery &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4 &nbsp;|&nbsp; LDR &#8594; GPIO2",
     tempLabel: "Temperature (DHT22)",
     optimalTemp: "&nbsp;Optimal 15&#8211;35&#176;C",
     humLabel: "Humidity (DHT22)",
@@ -415,8 +425,9 @@ const TRANSLATIONS = {
     optimalSoil: "&nbsp;Optimal 35&#8211;65%",
     phLabel: "Soil pH (GPIO35)",
     optimalPh: "&nbsp;Optimal 5.5&#8211;7.5",
-    lightLabel: "Light (IR Sensor)",
-    optimalLight: "&nbsp;Light detection",
+    lightLabel: "Light (LDR, GPIO2)",
+    optimalLight: "&nbsp;in light since power-on",
+    lightShare: "light",
     batteryLabel: "Battery Level",
     batterySub: "&nbsp;Device battery status",
     sensorHistory: "Sensor History",
@@ -467,7 +478,7 @@ const TRANSLATIONS = {
     deviceNav: "उपकरण",
     online: "अनलाइन",
     hotspotInfo: "&#128225; हटस्पट: <strong>कृषि दृष्टि</strong> &nbsp;|&nbsp; पासवर्ड: <strong>plant1234</strong> &nbsp;|&nbsp; खोल्नुहोस्: <strong>http://192.168.4.1</strong>",
-    pinInfo: "&#128204; माटो &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; ब्याट्री &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4",
+    pinInfo: "&#128204; माटो &#8594; GPIO34 &nbsp;|&nbsp; pH &#8594; GPIO35 &nbsp;|&nbsp; ब्याट्री &#8594; GPIO33 &nbsp;|&nbsp; DHT22 &#8594; GPIO4 &nbsp;|&nbsp; LDR &#8594; GPIO2",
     tempLabel: "तापक्रम (DHT22)",
     optimalTemp: "&nbsp;इष्टतम १५&#8211;३५&#176;C",
     humLabel: "हावाको ओस/आर्द्रता (DHT22)",
@@ -476,8 +487,9 @@ const TRANSLATIONS = {
     optimalSoil: "&nbsp;इष्टतम ३५&#8211;६५%",
     phLabel: "माटोको pH (GPIO35)",
     optimalPh: "&nbsp;इष्टतम ५.५&#8211;७.५",
-    lightLabel: "प्रकाश (IR सेन्सर)",
-    optimalLight: "&nbsp;प्रकाश पहिचान",
+    lightLabel: "प्रकाश (LDR, GPIO2)",
+    optimalLight: "&nbsp;सुरु भएदेखि उज्यालोमा",
+    lightShare: "उज्यालो",
     batteryLabel: "ब्याट्री स्तर",
     batterySub: "&nbsp;उपकरण ब्याट्री स्थिति",
     sensorHistory: "सेन्सर इतिहास",
@@ -704,13 +716,18 @@ function getRecommendations(d, lang) {
   }
 
   // Light
+  var recShare = lightShareOf(d);
+  var shareNote = recShare != null && d.uptimeSec
+    ? (isEn ? " Light " + recShare + "% of the last " + fmtClock(d.uptimeSec) + "."
+            : " पछिल्लो " + fmtClock(d.uptimeSec) + " मा " + recShare + "% समय उज्यालो।")
+    : "";
   if (d.lux === 0) {
     recs.push({
       sensor: isEn ? "Light" : "प्रकाश",
       val: isEn ? "Dark" : "अध्यारो",
       status: isEn ? "Low Light" : "कम प्रकाश",
       color: "#ef4444",
-      action: isEn ? "Too dark. Ensure the plant gets direct/indirect sunlight, or use grow lights." : "धेरै अध्यारो भयो। बिरुवालाई पर्याप्त सूर्यको प्रकाशमा राख्नुहोस् वा ग्रो लाइट प्रयोग गर्नुहोस्।"
+      action: isEn ? "Too dark. Ensure the plant gets direct/indirect sunlight, or use grow lights." + shareNote : "धेरै अध्यारो भयो। बिरुवालाई पर्याप्त सूर्यको प्रकाशमा राख्नुहोस् वा ग्रो लाइट प्रयोग गर्नुहोस्।" + shareNote
     });
   } else {
     recs.push({
@@ -718,7 +735,7 @@ function getRecommendations(d, lang) {
       val: isEn ? "Light" : "उज्यालो",
       status: isEn ? "Adequate" : "पर्याप्त",
       color: "#22c55e",
-      action: isEn ? "Light conditions are sufficient for photosynthesis." : "प्रकाशको अवस्था प्रकाश संश्लेषणका लागि पर्याप्त छ।"
+      action: isEn ? "Light conditions are sufficient for photosynthesis." + shareNote : "प्रकाशको अवस्था प्रकाश संश्लेषणका लागि पर्याप्त छ।" + shareNote
     });
   }
 
@@ -748,6 +765,37 @@ function colorFor(type,val){
 }
 function luxLabel(v){
   return v===1?'Light':'Dark';
+}
+
+// Light/dark clock: the device sends running totals every ~10 s; between packets we
+// keep counting locally (into whichever state it last reported) so it ticks like the LCD.
+var lightClock=null;
+function fmtClock(sec){
+  sec=Math.max(0,Math.floor(sec));
+  var h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  if(h>=100) return h+'h '+String(m).padStart(2,'0')+'m';
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function setLightClock(d){
+  if(d.lightSec==null||d.darkSec==null){lightClock=null;renderLightClock();return;}
+  lightClock={light:+d.lightSec,dark:+d.darkSec,isLight:d.lux===1,at:Date.now()};
+  renderLightClock();
+}
+function renderLightClock(){
+  var lt=document.getElementById('lightTimeVal'),dt=document.getElementById('darkTimeVal');
+  var lOn=document.getElementById('lightTimerOn'),dOn=document.getElementById('darkTimerOn');
+  if(!lightClock){lt.textContent=dt.textContent='--:--:--';lOn.classList.remove('active');dOn.classList.remove('active');return;}
+  // Stop extrapolating if the device goes quiet, so a dead link doesn't inflate the totals
+  var extra=Math.min((Date.now()-lightClock.at)/1000,60);
+  var l=lightClock.light+(lightClock.isLight?extra:0),k=lightClock.dark+(lightClock.isLight?0:extra);
+  lt.textContent=fmtClock(l);dt.textContent=fmtClock(k);
+  lOn.classList.toggle('active',lightClock.isLight);dOn.classList.toggle('active',!lightClock.isLight);
+}
+setInterval(renderLightClock,1000);
+function lightShareOf(d){
+  if(d.lightPct!=null) return +d.lightPct;
+  var t=(+d.lightSec||0)+(+d.darkSec||0);
+  return t>0?Math.round(d.lightSec*100/t):null;
 }
 function setColor(el,c){el.style.color=c;}
 function flash(el){el.classList.remove('updated');void el.offsetWidth;el.classList.add('updated');}
@@ -839,8 +887,12 @@ function applyData(d){
   var llTrans = dict[ll] || ll;
   lv.textContent=llTrans;setColor(lv,lc);flash(lv);
   document.getElementById('lightStatus').textContent=llTrans;setColor(document.getElementById('lightStatus'),lc);
-  document.getElementById('luxSubStatus').textContent=ll==='Light'? (currentLang === 'en' ? 'Light Present' : 'प्रकाश छ') : (currentLang === 'en' ? 'Dark' : 'अध्यारो');setColor(document.getElementById('luxSubStatus'),lc);
-  document.getElementById('luxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
+  var share=lightShareOf(d);
+  var luxBarPct=share!=null?share:(d.lux===1?100:0);
+  document.getElementById('luxSubStatus').textContent=share!=null?share+'% '+dict.lightShare:(ll==='Light'?(currentLang === 'en' ? 'Light Present' : 'प्रकाश छ'):(currentLang === 'en' ? 'Dark' : 'अध्यारो'));setColor(document.getElementById('luxSubStatus'),lc);
+  document.getElementById('lblOptimalLight').style.display=share!=null?'':'none';
+  document.getElementById('luxBar').style.cssText='width:'+luxBarPct+'%;background:'+lc;
+  setLightClock(d);
   document.getElementById('luxDot').style.background=lc;
 
   var bv=document.getElementById('batPctVal');
@@ -864,8 +916,8 @@ function applyData(d){
   document.getElementById('mSoilVal').textContent=d.soil+'%';
   document.getElementById('mPhBar').style.cssText='width:'+((d.ph/14)*100)+'%;background:'+pc;
   document.getElementById('mPhVal').textContent=parseFloat(d.ph).toFixed(2);
-  document.getElementById('mLuxBar').style.cssText='width:'+(d.lux===1?100:0)+'%;background:'+lc;
-  document.getElementById('mLuxVal').textContent=llTrans;
+  document.getElementById('mLuxBar').style.cssText='width:'+luxBarPct+'%;background:'+lc;
+  document.getElementById('mLuxVal').textContent=share!=null?share+'%':llTrans;
   document.getElementById('mBatBar').style.cssText='width:'+d.batPct+'%;background:'+bc;
   document.getElementById('mBatVal').textContent=d.batPct+'%';
 
@@ -934,7 +986,8 @@ function generateTestData(){
           soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
           phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
           batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
+          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark',
+          lightSec:d.lightSec,darkSec:d.darkSec,lightPct:d.lightPct,uptimeSec:d.uptimeSec
         };
         applyData(data);
         addToReportData(d);
@@ -962,7 +1015,8 @@ function fetchData(){
           soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
           phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
           batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
+          lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark',
+          lightSec:d.lightSec,darkSec:d.darkSec,lightPct:d.lightPct,uptimeSec:d.uptimeSec
         };
         applyData(data);
         addToReportData(d);
@@ -998,7 +1052,8 @@ function streamData(){
         soilStatus:d.soil<30?'Dry':d.soil<40?'Moist':'Wet',
         phStatus:d.ph<5.0||d.ph>8.0?'Critical':d.ph<5.5||d.ph>7.5?'Warning':'Neutral',
         batStatus:d.batPct<30?'Low':d.batPct<70?'Medium':'Good',
-        lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark'
+        lightStatus:(d.lux!==undefined?d.lux:0)===1?'Light':'Dark',
+        lightSec:d.lightSec,darkSec:d.darkSec,lightPct:d.lightPct,uptimeSec:d.uptimeSec
       };
       applyData(data);
       addToReportData(d);
@@ -1046,6 +1101,9 @@ function changePageSize(){
 // Initialize Language on DOM Load
 document.addEventListener('DOMContentLoaded', function() {
   updateUILanguage();
+  fetchData();
+  streamData();
+  document.getElementById('siteAddr').textContent = window.location.protocol + '//' + window.location.host;
 });
 </script>
 </body>
